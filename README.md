@@ -39,6 +39,7 @@ brew install grega/tap/hdi
 ### Manual
 
 ```bash
+mkdir -p ~/.local/bin
 curl -fsSL https://raw.githubusercontent.com/grega/hdi/main/hdi -o ~/.local/bin/hdi
 chmod +x ~/.local/bin/hdi
 ```
