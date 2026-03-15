@@ -4,6 +4,10 @@
 
 Scan a project's README and extract the commands you (probably) need to get it running. No more opening up the whole project in your editor and scrolling through docs to find the `install` and `run` steps.
 
+For example, for the README in the repository [gregannandale.com](https://github.com/grega/gregannandale.com):
+
+![Screenshot showing the tool in action](https://github.com/user-attachments/assets/437aaf52-4bb4-4689-b781-21c25b1b74e6)
+
 ```
 $ cd some-project
 $ hdi
