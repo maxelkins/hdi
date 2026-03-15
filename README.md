@@ -21,6 +21,13 @@ $ hdi
 
 Arrow keys to navigate, Enter to execute, `q` to quit.
 
+## Example
+
+For the README in the repository [gregannandale.com](https://github.com/grega/gregannandale.com):
+
+![Screenshot showing the tool in action](https://github.com/user-attachments/assets/437aaf52-4bb4-4689-b781-21c25b1b74e6)
+
+
 ## Install
 
 ### Homebrew (macOS/Linux)
@@ -46,6 +53,12 @@ hdi install            Just install/setup commands
 hdi run                Just run/start commands
 hdi all                All sections (install + run + config + deploy + test)
 hdi /path/to/project   Scan a different directory
+```
+
+Help:
+
+```
+hdi --help
 ```
 
 ### Flags
