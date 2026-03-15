@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run tests before release
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -qq -y bats
+          bats test/hdi.bats
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: hdi
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            ```bash
+            # Homebrew
+            brew install gregannandale/tap/hdi
+
+            # Manual
+            curl -fsSL https://raw.githubusercontent.com/gregannandale/hdi/${{ steps.version.outputs.version }}/hdi -o ~/.local/bin/hdi
+            chmod +x ~/.local/bin/hdi
+            ```

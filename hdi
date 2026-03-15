@@ -240,9 +240,9 @@ render_static() {
         ;;
       empty)
         if $RAW; then
-          [[ -n "$line" ]] && printf "  %s\n" "$line"
+          if [[ -n "$line" ]]; then printf "  %s\n" "$line"; fi
         else
-          [[ -n "$line" ]] && printf "  %s%s%s\n" "$DIM" "$line" "$RESET"
+          if [[ -n "$line" ]]; then printf "  %s%s%s\n" "$DIM" "$line" "$RESET"; fi
         fi
         ;;
     esac

@@ -79,6 +79,15 @@ hdi /path/to/project   Scan a different directory
 
 No dependencies, just Bash. Should work on macOS and Linux.
 
+## Testing
+
+Tests use [bats-core](https://github.com/bats-core/bats-core).
+
+```bash
+brew install bats-core  # or: apt-get install bats
+bats test/hdi.bats
+```
+
 ## Publishing a new release
 
 1. Tag the release and push:
