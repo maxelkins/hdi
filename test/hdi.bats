@@ -620,6 +620,8 @@ setup() {
 # ── Interactive: copy to clipboard ───────────────────────────────────────────
 
 @test "interactive: 'c' copies highlighted command to clipboard" {
+  command -v python3 >/dev/null 2>&1 || skip "python3 required for PTY tests"
+
   local fake_bin clip_file
   fake_bin="$(mktemp -d)"
   clip_file="$fake_bin/clipboard.txt"
@@ -631,12 +633,12 @@ setup() {
   # Keys: ↓ c q  (navigate down one, copy, quit)
   local keys=$'\x1b[Bcq'
 
-  # Run interactively in a pseudo-TTY via script
-  if [[ "$(uname)" == "Darwin" ]]; then
-    printf '%s' "$keys" | script -q /dev/null env PATH="$fake_bin:$PATH" "$HDI" "$FIXTURES/node-express" >/dev/null 2>&1 || true
-  else
-    printf '%s' "$keys" | script -q -c "env PATH='$fake_bin:$PATH' '$HDI' '$FIXTURES/node-express'" /dev/null >/dev/null 2>&1 || true
-  fi
+  # Run interactively in a pseudo-TTY via Python pty module
+  # (script(1) does not reliably forward stdin to the PTY on Linux)
+  printf '%s' "$keys" | python3 -c "
+import pty, os, sys
+os.environ['PATH'] = sys.argv[1] + ':' + os.environ['PATH']
+pty.spawn(sys.argv[2:])" "$fake_bin" "$HDI" "$FIXTURES/node-express" >/dev/null 2>&1 || true
 
   # Second command in node-express default mode is "nvm use 20"
   [ -f "$clip_file" ]
