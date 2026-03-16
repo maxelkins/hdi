@@ -157,6 +157,7 @@ find_backtick_commands() {
   local require_args="${2:-true}"
   local suffix=" "
   $require_args || suffix="( |$)"
+  # shellcheck disable=SC2016
   echo "$text" | grep -oE '`[^`]+`' | sed 's/^`//;s/`$//' \
     | grep -iE "^($CMD_PREFIXES)${suffix}" || true
 }
