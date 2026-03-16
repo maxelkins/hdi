@@ -274,7 +274,7 @@ build_display_list() {
   done
 }
 
-# ── Non-interactive render (same as before) ──────────────────────────────────
+# ── Non-interactive render ──────────────────────────────────
 render_static() {
   for idx in "${!DISPLAY_LINES[@]}"; do
     local line="${DISPLAY_LINES[$idx]}"
@@ -357,8 +357,8 @@ render_full() {
 # ── Interactive picker (inline mode) ─────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# Draws inline below the cursor (like fzf --height). On each redraw, moves up
-# by the exact number of lines previously drawn, then clears downward. On quit,
+# Draws inline below the cursor. On each redraw, moves up by the exact
+# number of lines previously drawn, then clears downward. On quit,
 # clears the picker area entirely so the terminal is left clean.
 
 PICKER_LINES=0  # tracks how many lines the last draw_picker call printed
