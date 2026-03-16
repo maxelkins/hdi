@@ -144,7 +144,7 @@ curl -sL https://github.com/grega/hdi/archive/refs/tags/v0.x.0.tar.gz | shasum -
    - Set `url` to the new tag's tarball URL
    - Set `sha256` to the value from step 2
 
-4. Push the tap repo. Users can now get the update via `brew upgrade hdi`.
+4. Push the tap repo. Users can now get the update via `brew upgrade grega/tap/hdi`.
 
 ## License
 
