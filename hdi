@@ -396,7 +396,9 @@ draw_picker() {
         (( count += 2 ))
         ;;
       command)
-        if (( idx == selected )); then
+        if (( idx == selected )) && [[ -n "$FLASH_MSG" ]]; then
+          printf "  %s%s✔ %s %s\n" "$BG_SELECT" "$GREEN$BOLD" "$line" "$RESET"
+        elif (( idx == selected )); then
           printf "  %s%s▶ %s %s\n" "$BG_SELECT" "$WHITE$BOLD" "$line" "$RESET"
         else
           printf "  %s  %s%s\n" "$GREEN" "$line" "$RESET"
@@ -566,7 +568,7 @@ run_interactive() {
         elif command -v xsel >/dev/null 2>&1; then
           printf '%s' "$cmd" | xsel --clipboard
         fi
-        FLASH_MSG="✓ Copied: $cmd"
+        FLASH_MSG="✔ Copied: $cmd"
         ;;
 
       esc|q)
