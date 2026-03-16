@@ -5,6 +5,7 @@
 #   hdi                   Interactive command picker (default in a terminal)
 #   hdi install           Just install/setup commands
 #   hdi run               Just run/start commands
+#   hdi test              Just test commands
 #   hdi all               Show all matched sections
 #   hdi [mode] --no-interactive   Print commands without the picker
 #   hdi [mode] --full     Include prose around commands
@@ -17,7 +18,7 @@
 #   a            Execute all commands sequentially
 #   q / Esc      Quit
 #
-# Aliases: "install" = "setup" = "i", "run" = "start" = "r"
+# Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t"
 
 set -euo pipefail
 
@@ -31,13 +32,15 @@ DIR="."
 # ── Keyword groups ───────────────────────────────────────────────────────────
 KW_INSTALL="prerequisite|require|depend|install|setup|set.up|set-up|getting.started|quick.start|quickstart"
 KW_RUN="usage|running|run|start|develop|dev.server|launch"
-KW_EXTRA="build|configuration|config|environment|deploy|test"
+KW_TEST="test|spec"
+KW_EXTRA="build|configuration|config|environment|deploy"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
 for arg in "$@"; do
   case "$arg" in
     install|setup|i)        MODE="install" ;;
     run|start|r)            MODE="run" ;;
+    test|t)                 MODE="test" ;;
     all|a)                  MODE="all" ;;
     --full|-f)              FULL=true ;;
     --raw)                  RAW=true; INTERACTIVE="no" ;;
@@ -69,7 +72,8 @@ fi
 case "$MODE" in
   install)  PATTERN="($KW_INSTALL)" ;;
   run)      PATTERN="($KW_RUN)" ;;
-  all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_EXTRA)" ;;
+  test)     PATTERN="($KW_TEST)" ;;
+  all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_EXTRA)" ;;
   default)  PATTERN="($KW_INSTALL|$KW_RUN)" ;;
 esac
 
@@ -322,6 +326,7 @@ draw_picker() {
   case "$MODE" in
     install) printf "  %s[install]%s" "$DIM" "$RESET" ;;
     run)     printf "  %s[run]%s" "$DIM" "$RESET" ;;
+    test)    printf "  %s[test]%s" "$DIM" "$RESET" ;;
     all)     printf "  %s[all]%s" "$DIM" "$RESET" ;;
   esac
   printf "\n"
@@ -553,6 +558,7 @@ else
     case "$MODE" in
       install) printf "  %s[install]%s" "$DIM" "$RESET" ;;
       run)     printf "  %s[run]%s" "$DIM" "$RESET" ;;
+      test)    printf "  %s[test]%s" "$DIM" "$RESET" ;;
       all)     printf "  %s[all]%s" "$DIM" "$RESET" ;;
     esac
     printf "\n"

@@ -96,6 +96,20 @@ setup() {
   [[ "$output" == *"bin/rails server"* ]]
 }
 
+@test "'test' mode shows only test sections" {
+  run "$HDI" test --raw "$FIXTURES/ruby-rails"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"bundle exec rspec"* ]]
+  [[ "$output" != *"bundle install"* ]]
+  [[ "$output" != *"bin/rails server"* ]]
+}
+
+@test "'t' is an alias for test mode" {
+  run "$HDI" t --raw "$FIXTURES/ruby-rails"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"bundle exec rspec"* ]]
+}
+
 @test "'all' mode includes extra sections" {
   run "$HDI" all --raw "$FIXTURES/ruby-rails"
   [ "$status" -eq 0 ]
@@ -237,6 +251,21 @@ setup() {
   run "$HDI" all --raw "$FIXTURES/elixir-phoenix"
   [ "$status" -eq 0 ]
   [[ "$output" == *"mix test"* ]]
+}
+
+@test "'test' matches 'Test' heading" {
+  run "$HDI" test --raw "$FIXTURES/elixir-phoenix"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"mix test"* ]]
+  [[ "$output" != *"mix deps.get"* ]]
+  [[ "$output" != *"mix phx.server"* ]]
+}
+
+@test "'test' matches 'Testing' heading" {
+  run "$HDI" test --raw "$FIXTURES/nested-sections"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cargo test"* ]]
+  [[ "$output" != *"cargo run"* ]]
 }
 
 # ── Code block filtering ───────────────────────────────────────────────────
