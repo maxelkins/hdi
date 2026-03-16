@@ -633,9 +633,9 @@ setup() {
 
   # Run interactively in a pseudo-TTY via script
   if [[ "$(uname)" == "Darwin" ]]; then
-    printf '%s' "$keys" | script -q /dev/null env PATH="$fake_bin:$PATH" "$HDI" "$FIXTURES/node-express" >/dev/null 2>&1
+    printf '%s' "$keys" | script -q /dev/null env PATH="$fake_bin:$PATH" "$HDI" "$FIXTURES/node-express" >/dev/null 2>&1 || true
   else
-    printf '%s' "$keys" | script -qe -c "env PATH='$fake_bin:$PATH' '$HDI' '$FIXTURES/node-express'" /dev/null >/dev/null 2>&1
+    printf '%s' "$keys" | script -q -c "env PATH='$fake_bin:$PATH' '$HDI' '$FIXTURES/node-express'" /dev/null >/dev/null 2>&1 || true
   fi
 
   # Second command in node-express default mode is "nvm use 20"
