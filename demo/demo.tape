@@ -40,6 +40,11 @@ Sleep 500ms
 # Navigate back up
 Up
 Sleep 500ms
+
+# Copy the command to clipboard
+Type "c"
+Sleep 2.5s
+
 Up
 Sleep 2.5s
 
