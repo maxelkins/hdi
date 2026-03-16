@@ -93,10 +93,11 @@ No dependencies, just Bash. Should work on macOS and Linux.
 
 ## Testing
 
-Tests use [bats-core](https://github.com/bats-core/bats-core).
+Tests use [bats-core](https://github.com/bats-core/bats-core). Linting uses [ShellCheck](https://www.shellcheck.net/).
 
 ```bash
-brew install bats-core  # or: apt-get install bats
+brew install bats-core shellcheck  # or: apt-get install bats shellcheck
+shellcheck hdi
 bats test/hdi.bats
 ```
 
