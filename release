@@ -66,7 +66,7 @@ sed -i.bak "s/^VERSION=\"$current\"/VERSION=\"$new\"/" "$HDI" && rm -f "$HDI.bak
 # Run benchmarks against the new version
 if [[ -x "$SCRIPT_DIR/bench/run" ]]; then
   echo ""
-  "$SCRIPT_DIR/bench/run"
+  "$SCRIPT_DIR/bench/run" --log
 fi
 
 git add hdi bench/results.csv

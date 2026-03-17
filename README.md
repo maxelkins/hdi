@@ -130,8 +130,8 @@ This outputs `demo.gif` from the tape file.
 Static benchmark READMEs in `bench/` (small, medium, large, stress) exercise every parsing path at different scales. Run benchmarks with:
 
 ```bash
-./bench/run              # run and append to bench/results.md
-./bench/run --no-log     # print results only, don't log
+./bench/run              # run benchmarks, print results
+./bench/run --log        # also save to bench/results.csv (should only be used by release script / run when creating a new release)
 ```
 
 Benchmarks run automatically during `./release` and are recorded in `bench/results.csv`.

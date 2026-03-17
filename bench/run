@@ -2,8 +2,8 @@
 # bench/run — benchmark hdi against static READMEs and report timings.
 #
 # Usage:
-#   ./bench/run              # run benchmarks, print results, append to log
-#   ./bench/run --no-log     # run benchmarks, print results only
+#   ./bench/run              # run benchmarks, print results only
+#   ./bench/run --log        # also save to bench/results.csv (used by release)
 
 set -euo pipefail
 
@@ -19,18 +19,38 @@ median() {
   sort -n | awk '{a[NR]=$1} END {print a[int((NR+1)/2)]}'
 }
 
-time_ms() {
-  local start end
-  start=$(/usr/bin/perl -MTime::HiRes=time -e 'printf "%.6f\n", time')
-  "$@" >/dev/null 2>&1
-  end=$(/usr/bin/perl -MTime::HiRes=time -e 'printf "%.6f\n", time')
-  /usr/bin/perl -e "printf \"%.1f\n\", ($end - $start) * 1000"
-}
+if [[ "$(uname)" == "Darwin" ]]; then
+  time_ms() {
+    local start end
+    start=$(/usr/bin/perl -MTime::HiRes=time -e 'printf "%.6f\n", time')
+    "$@" >/dev/null 2>&1
+    end=$(/usr/bin/perl -MTime::HiRes=time -e 'printf "%.6f\n", time')
+    /usr/bin/perl -e "printf \"%.1f\n\", ($end - $start) * 1000"
+  }
+else
+  time_ms() {
+    local start end
+    start=$(date +%s%N)
+    "$@" >/dev/null 2>&1
+    end=$(date +%s%N)
+    echo "$(( (end - start) / 1000000 )).$(( (end - start) / 100000 % 10 ))"
+  }
+fi
 
-# ── Version info ─────────────────────────────────────────────────────────────
+# ── Version and machine info ──────────────────────────────────────────────────
 
 version=$(grep -m1 '^VERSION=' "$HDI" | sed 's/VERSION="//;s/"//')
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Build a short machine identifier: Brand_Model_Cores
+if [[ "$(uname)" == "Darwin" ]]; then
+  chip=$(sysctl -n machdep.cpu.brand_string 2>/dev/null | sed 's/ /_/g')
+  cores=$(sysctl -n hw.ncpu 2>/dev/null)
+else
+  chip=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | sed 's/.*: //;s/ /_/g')
+  cores=$(nproc 2>/dev/null)
+fi
+machine="${chip:-unknown}_${cores:-?}c"
 
 # ── Benchmark ────────────────────────────────────────────────────────────────
 
@@ -62,7 +82,7 @@ done
 # ── Print results ────────────────────────────────────────────────────────────
 
 printf "\n"
-printf "  hdi %s\n" "$version"
+printf "  hdi %s on %s\n" "$version" "$machine"
 printf "  %s — %d runs per fixture\n\n" "$timestamp" "$RUNS"
 printf "  %-12s %6s %8s\n" "Fixture" "Lines" "Median"
 printf "  %-12s %6s %8s\n" "───────" "─────" "──────"
@@ -73,12 +93,12 @@ printf "\n"
 
 # ── Log to CSV ───────────────────────────────────────────────────────────────
 
-if [[ "${1:-}" == "--no-log" ]]; then
+if [[ "${1:-}" != "--log" ]]; then
   exit 0
 fi
 
 if [[ ! -f "$LOG" ]]; then
-  echo "timestamp,version,fixture,lines,median_ms" > "$LOG"
+  echo "timestamp,version,machine,fixture,lines,median_ms" > "$LOG"
 fi
 
 # Remove any existing rows for this version (keep header + other versions)
@@ -88,7 +108,7 @@ mv "$tmpfile" "$LOG"
 
 # Append new rows
 for i in "${!names[@]}"; do
-  echo "$timestamp,$version,${names[$i]},${lines[$i]},${medians[$i]}" >> "$LOG"
+  echo "$timestamp,$version,$machine,${names[$i]},${lines[$i]},${medians[$i]}" >> "$LOG"
 done
 
 printf "  Logged to bench/results.csv\n\n"
