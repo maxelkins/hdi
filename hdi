@@ -33,10 +33,10 @@ INTERACTIVE="auto"   # auto | yes | no
 DIR="."
 
 # ── Keyword groups ───────────────────────────────────────────────────────────
-KW_INSTALL="prerequisite|require|depend|install|setup|set.up|set-up|getting.started|quick.start|quickstart"
-KW_RUN="usage|running|run|start|develop|dev.server|launch|command"
-KW_TEST="test|spec"
-KW_EXTRA="build|configuration|config|environment|deploy"
+KW_INSTALL="prerequisite(s)?|require(ments)?|depend(encies)?|install(ing|ation)?|setup|set[. _-]up|getting[. _-]started|quick[. _-]start|quickstart|how[. _-]to|docker|migration|database[. _-]setup"
+KW_RUN="^usage|run(ning)?|start(ing)?|develop(ment|ing)?|dev[. _-]server|launch(ing)?|command|scripts|makefile|make[. _-]targets"
+KW_TEST="test(s|ing)?"
+KW_EXTRA="build(ing)?|compil(ation|ing)|config(uration|uring)?|environment|deploy(ment|ing)?"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
 for arg in "$@"; do
@@ -117,30 +117,73 @@ parse_sections() {
   local section_level=0
   local heading_text=""
   local body=""
+  local prev_line=""
+  local have_prev=false
+
+  # Helper: process a detected heading at a given level
+  _ps_handle_heading() {
+    local text="$1" level="$2"
+    # Strip trailing ATX closing hashes
+    if [[ "$text" =~ ^(.*[^#[:space:]])[[:space:]]*#+ ]]; then
+      text="${BASH_REMATCH[1]}"
+    fi
+    # Strip bold/italic markdown formatting
+    text=$(echo "$text" | sed -E 's/\*{1,2}([^*]+)\*{1,2}/\1/g; s/_{1,2}([^_]+)_{1,2}/\1/g')
+
+    if $in_section && (( level <= section_level )); then
+      SECTION_TITLES+=("$heading_text")
+      SECTION_BODIES+=("$body")
+      in_section=false
+      body=""
+    fi
+
+    if echo "$text" | grep -qiE "$PATTERN"; then
+      in_section=true
+      section_level=$level
+      heading_text="$text"
+      body=""
+    fi
+  }
 
   while IFS= read -r line; do
-    if [[ "$line" =~ ^(#{1,6})[[:space:]]+(.*) ]]; then
+    # Check for setext underline: current line is ===+ or ---+ (3+ chars)
+    if $have_prev && [[ "$line" =~ ^[[:space:]]*(={3,}|-{3,})[[:space:]]*$ ]]; then
+      local setext_char="${BASH_REMATCH[1]:0:1}"
+      local level=2
+      [[ "$setext_char" == "=" ]] && level=1
+      _ps_handle_heading "$prev_line" "$level"
+      have_prev=false
+      prev_line=""
+      continue
+    fi
+
+    # Process the buffered previous line
+    if $have_prev; then
+      if [[ "$prev_line" =~ ^(#{1,6})[[:space:]]+(.*) ]]; then
+        local hashes="${BASH_REMATCH[1]}"
+        local level=${#hashes}
+        local text="${BASH_REMATCH[2]}"
+        _ps_handle_heading "$text" "$level"
+      elif $in_section; then
+        body+="$prev_line"$'\n'
+      fi
+    fi
+
+    prev_line="$line"
+    have_prev=true
+  done
+
+  # Process final buffered line
+  if $have_prev; then
+    if [[ "$prev_line" =~ ^(#{1,6})[[:space:]]+(.*) ]]; then
       local hashes="${BASH_REMATCH[1]}"
       local level=${#hashes}
       local text="${BASH_REMATCH[2]}"
-
-      if $in_section && (( level <= section_level )); then
-        SECTION_TITLES+=("$heading_text")
-        SECTION_BODIES+=("$body")
-        in_section=false
-        body=""
-      fi
-
-      if echo "$text" | grep -qiE "$PATTERN"; then
-        in_section=true
-        section_level=$level
-        heading_text="$text"
-        body=""
-      fi
+      _ps_handle_heading "$text" "$level"
     elif $in_section; then
-      body+="$line"$'\n'
+      body+="$prev_line"$'\n'
     fi
-  done
+  fi
 
   if $in_section; then
     SECTION_TITLES+=("$heading_text")
@@ -150,10 +193,29 @@ parse_sections() {
 
 # ── Extract fenced code blocks, skipping non-command languages ───────────────
 SKIP_LANGS="json|yaml|yml|toml|xml|csv|sql|html|css|text|plaintext|txt|output|log|env"
+SKIP_LANGS+="|ini|conf|properties|graphql|gql|proto|protobuf|hcl"
+SKIP_LANGS+="|markdown|md|mermaid|diff|patch|svg"
 
 # Known CLI prefixes for recognising commands in inline backticks (`yarn test`)
 # and for validating shell prompt stripping ($ command → command)
-CMD_PREFIXES="yarn|npm|npx|pnpm|node|bun|deno|python3?|pip3?|pipenv|poetry|uv|ruby|gem|bundle|rake|rails|cargo|rustup|go|java|javac|mvn|gradle|dotnet|docker|docker-compose|podman|make|cmake|bash|sh|zsh|curl|wget|git|sudo|apt|apt-get|brew|yum|dnf|kubectl|terraform|ansible|helm"
+CMD_PREFIXES="yarn|npm|npx|pnpm|pnpx|bunx|node|bun|deno|corepack"
+CMD_PREFIXES+="|python3?|pip3?|pipenv|poetry|uv|conda|mamba"
+CMD_PREFIXES+="|ruby|gem|bundle|rake|rails"
+CMD_PREFIXES+="|cargo|rustup"
+CMD_PREFIXES+="|go|zig"
+CMD_PREFIXES+="|java|javac|mvn|gradle|sbt|lein|clj|mill"
+CMD_PREFIXES+="|dotnet"
+CMD_PREFIXES+="|swift|flutter|dart"
+CMD_PREFIXES+="|elixir|mix|iex"
+CMD_PREFIXES+="|php|composer|perl|lua"
+CMD_PREFIXES+="|cabal|stack"
+CMD_PREFIXES+="|docker|docker-compose|podman"
+CMD_PREFIXES+="|make|cmake|just|task|bazel|pants"
+CMD_PREFIXES+="|bash|sh|zsh"
+CMD_PREFIXES+="|curl|wget|git|sudo|apt|apt-get|brew|yum|dnf|pacman"
+CMD_PREFIXES+="|kubectl|terraform|ansible|helm"
+CMD_PREFIXES+="|nix|mise|asdf|rtx|fnm|nvm|volta"
+CMD_PREFIXES+="|ng|vue|vite|turbo|nx"
 
 # Return backtick-wrapped commands from a line of text.
 # Usage: find_backtick_commands "text" [require_args]
@@ -185,32 +247,87 @@ extract_commands() {
   local commands=""
   local in_code=false
   local skip_block=false
+  local fence_char=""
+  local continuation_buf=""
+  local console_mode=false
+  local indented_buf=""
 
   while IFS= read -r line; do
-    if [[ "$line" =~ ^[[:space:]]*\`\`\` ]]; then
+    if [[ "$line" =~ ^[[:space:]]*(\`{3,}|~{3,}) ]]; then
+      local matched="${BASH_REMATCH[1]}"
       if $in_code; then
-        in_code=false
-        if ! $skip_block && [[ -n "$commands" ]]; then
-          commands+=$'\n'
+        # Only close if same fence character
+        if [[ "${matched:0:1}" == "$fence_char" ]]; then
+          # Flush any pending continuation
+          if [[ -n "$continuation_buf" ]]; then
+            commands+="$continuation_buf"$'\n'
+            continuation_buf=""
+          fi
+          in_code=false
+          if ! $skip_block && [[ -n "$commands" ]]; then
+            commands+=$'\n'
+          fi
+          skip_block=false
+          fence_char=""
+          console_mode=false
         fi
-        skip_block=false
       else
         in_code=true
+        fence_char="${matched:0:1}"
         local lang=""
-        if [[ "$line" =~ \`\`\`([a-zA-Z0-9_-]*) ]]; then
-          lang="${BASH_REMATCH[1]}"
-        fi
+        local rest="${line#*"$matched"}"
+        rest="${rest#"${rest%%[![:space:]]*}"}"
+        lang="${rest%%[[:space:]]*}"
+        lang="${lang%%[^a-zA-Z0-9_-]*}"
         if [[ -n "$lang" ]] && echo "$lang" | grep -qiE "^($SKIP_LANGS)$"; then
           skip_block=true
+        elif [[ -n "$lang" ]] && echo "$lang" | grep -qiE "^(console|terminal)$"; then
+          console_mode=true
         fi
       fi
       continue
     fi
     if $in_code && ! $skip_block; then
       local stripped="${line#"${line%%[![:space:]]*}"}"
-      stripped=$(strip_prompt "$stripped")
-      commands+="$stripped"$'\n'
+      # In console mode, only extract lines with $ or % prompts (skip output)
+      if $console_mode; then
+        if [[ "$stripped" =~ ^[\$%][[:space:]]+ ]]; then
+          stripped=$(strip_prompt "$stripped")
+        else
+          continue
+        fi
+      else
+        stripped=$(strip_prompt "$stripped")
+      fi
+      # Handle backslash line continuations
+      if [[ "$stripped" =~ \\[[:space:]]*$ ]]; then
+        continuation_buf+="${stripped%\\*} "
+      elif [[ -n "$continuation_buf" ]]; then
+        commands+="${continuation_buf}${stripped}"$'\n'
+        continuation_buf=""
+      else
+        commands+="$stripped"$'\n'
+      fi
     elif ! $in_code; then
+      # Detect indented code blocks (4+ spaces or tab)
+      if [[ "$line" =~ ^(\ {4,}|	) ]] && [[ -n "${line//[[:space:]]/}" ]]; then
+        local dedented="${line#    }"
+        [[ "$line" == $'\t'* ]] && dedented="${line#$'\t'}"
+        indented_buf+="$dedented"$'\n'
+        continue
+      fi
+      # Flush indented buffer — only include if it looks like commands
+      if [[ -n "$indented_buf" ]]; then
+        if echo "$indented_buf" | grep -qiE "^[[:space:]]*(\\\$[[:space:]]+)?($CMD_PREFIXES)( |$)"; then
+          while IFS= read -r iline; do
+            [[ -z "$iline" ]] && continue
+            iline=$(strip_prompt "$iline")
+            commands+="$iline"$'\n'
+          done <<< "$indented_buf"
+        fi
+        indented_buf=""
+      fi
+
       local inline_cmds
       inline_cmds=$(find_backtick_commands "$line")
       if [[ -n "$inline_cmds" ]]; then
@@ -220,6 +337,18 @@ extract_commands() {
       fi
     fi
   done <<< "$content"
+
+  # Flush any remaining indented buffer
+  if [[ -n "$indented_buf" ]]; then
+    if echo "$indented_buf" | grep -qiE "^[[:space:]]*(\\\$[[:space:]]+)?($CMD_PREFIXES)( |$)"; then
+      while IFS= read -r iline; do
+        [[ -z "$iline" ]] && continue
+        iline=$(strip_prompt "$iline")
+        commands+="$iline"$'\n'
+      done <<< "$indented_buf"
+    fi
+    indented_buf=""
+  fi
 
   printf '%s' "$commands"
 }
@@ -334,13 +463,44 @@ render_full() {
 
     local in_code=false
     local code_buf=""
+    local rf_fence_char=""
+    local rf_prev="" rf_have_prev=false
+
+    # Helper: render a single non-heading, non-code body line
+    _rf_render_line() {
+      local l="$1"
+      [[ -z "${l// /}" ]] && echo "" && return
+      if [[ "$l" =~ ^#{2,}[[:space:]]+(.*) ]]; then
+        local sub_heading="${BASH_REMATCH[1]}"
+        if [[ "$sub_heading" =~ ^(.*[^#[:space:]])[[:space:]]*#+ ]]; then
+          sub_heading="${BASH_REMATCH[1]}"
+        fi
+        sub_heading=$(echo "$sub_heading" | sed -E 's/\*{1,2}([^*]+)\*{1,2}/\1/g; s/_{1,2}([^_]+)_{1,2}/\1/g')
+        printf "  %s%s%s\n" "$MAGENTA$BOLD" "$sub_heading" "$RESET"
+        return
+      fi
+      local formatted
+      formatted=$(echo "$l" | sed -E "s/\`([^\`]+)\`/${GREEN}\1${RESET}/g")
+      printf "  %s\n" "$formatted"
+    }
+
     while IFS= read -r line; do
-      if [[ "$line" =~ ^\`\`\` ]]; then
+      # Handle fenced code blocks (pass-through, no lookahead needed)
+      if [[ "$line" =~ ^[[:space:]]*(\`{3,}|~{3,}) ]]; then
+        # Flush buffered prev line before handling fence
+        if $rf_have_prev && ! $in_code; then
+          _rf_render_line "$rf_prev"
+          rf_have_prev=false; rf_prev=""
+        fi
+        local rf_matched="${BASH_REMATCH[1]}"
         if $in_code; then
-          printf "%s%s%s\n" "$CODE_BG$GREEN" "$code_buf" "$RESET"
-          code_buf=""; in_code=false
+          if [[ "${rf_matched:0:1}" == "$rf_fence_char" ]]; then
+            printf "%s%s%s\n" "$CODE_BG$GREEN" "$code_buf" "$RESET"
+            code_buf=""; in_code=false; rf_fence_char=""
+          fi
         else
           in_code=true
+          rf_fence_char="${rf_matched:0:1}"
         fi
         continue
       fi
@@ -348,15 +508,28 @@ render_full() {
         code_buf+="  $line"$'\n'
         continue
       fi
-      [[ -z "${line// /}" ]] && echo "" && continue
-      if [[ "$line" =~ ^#{2,}[[:space:]]+(.*) ]]; then
-        printf "  %s%s%s\n" "$MAGENTA$BOLD" "${BASH_REMATCH[1]}" "$RESET"
+
+      # Setext heading detection: prev_line followed by ===+ or ---+
+      if $rf_have_prev && [[ "$line" =~ ^[[:space:]]*(={3,}|-{3,})[[:space:]]*$ ]]; then
+        local sh_text="$rf_prev"
+        sh_text=$(echo "$sh_text" | sed -E 's/\*{1,2}([^*]+)\*{1,2}/\1/g; s/_{1,2}([^_]+)_{1,2}/\1/g')
+        printf "  %s%s%s\n" "$MAGENTA$BOLD" "$sh_text" "$RESET"
+        rf_have_prev=false; rf_prev=""
         continue
       fi
-      local formatted
-      formatted=$(echo "$line" | sed -E "s/\`([^\`]+)\`/${GREEN}\1${RESET}/g")
-      printf "  %s\n" "$formatted"
+
+      # Process buffered prev line
+      if $rf_have_prev; then
+        _rf_render_line "$rf_prev"
+      fi
+      rf_prev="$line"
+      rf_have_prev=true
     done <<< "$content"
+
+    # Flush final buffered line
+    if $rf_have_prev; then
+      _rf_render_line "$rf_prev"
+    fi
   done
 }
 
@@ -570,6 +743,8 @@ run_interactive() {
         local cmd="${LINE_CMDS[$selected]}"
         if command -v pbcopy >/dev/null 2>&1; then
           printf '%s' "$cmd" | pbcopy
+        elif command -v wl-copy >/dev/null 2>&1; then
+          printf '%s' "$cmd" | wl-copy
         elif command -v xclip >/dev/null 2>&1; then
           printf '%s' "$cmd" | xclip -selection clipboard
         elif command -v xsel >/dev/null 2>&1; then

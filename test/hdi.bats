@@ -690,3 +690,303 @@ else:
 
   rm -rf "$fake_bin"
 }
+
+# ── Tilde fences ────────────────────────────────────────────────────────────
+
+@test "tilde fences: extracts commands from ~~~ blocks" {
+  run "$HDI" install --raw --ni "$FIXTURES/tilde-fences"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip install tilde-app"* ]]
+}
+
+@test "tilde fences: extracts unlabelled ~~~ blocks" {
+  run "$HDI" run --raw --ni "$FIXTURES/tilde-fences"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"tilde-app run --port 8080"* ]]
+}
+
+@test "tilde fences: backtick blocks still work alongside tilde" {
+  run "$HDI" all --raw --ni "$FIXTURES/tilde-fences"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip install tilde-app"* ]]
+  [[ "$output" == *"tilde-app run --port 8080"* ]]
+  [[ "$output" == *"tilde-app build"* ]]
+}
+
+@test "tilde fences: skips tilde blocks with data languages" {
+  run "$HDI" all --raw --ni "$FIXTURES/tilde-fences"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *'"key"'* ]]
+}
+
+# ── Trailing hashes ────────────────────────────────────────────────────────
+
+@test "trailing hashes: matches headings with trailing #" {
+  run "$HDI" install --raw --ni "$FIXTURES/trailing-hashes"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"make install"* ]]
+}
+
+@test "trailing hashes: section title does not include trailing #" {
+  run "$HDI" install --raw --ni "$FIXTURES/trailing-hashes"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Installation"* ]]
+  [[ "$output" != *"Installation ##"* ]]
+}
+
+# ── Keyword dot escaping ───────────────────────────────────────────────────
+
+@test "keyword dots: does not match arbitrary characters in keyword gaps" {
+  run "$HDI" install --raw --ni "$FIXTURES/keyword-dots"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"bad-match-command"* ]]
+}
+
+@test "keyword dots: matches 'Set Up' with space separator" {
+  run "$HDI" install --raw --ni "$FIXTURES/keyword-dots"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+}
+
+@test "keyword dots: matches 'Set-Up' with hyphen separator" {
+  run "$HDI" install --raw --ni "$FIXTURES/keyword-dots"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"yarn install"* ]]
+}
+
+# ── Formatted headings ─────────────────────────────────────────────────────
+
+@test "formatted headings: matches bold-wrapped heading" {
+  run "$HDI" install --raw --ni "$FIXTURES/formatted-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+}
+
+@test "formatted headings: matches italic-wrapped heading" {
+  run "$HDI" run --raw --ni "$FIXTURES/formatted-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm start"* ]]
+}
+
+@test "formatted headings: section title is clean" {
+  run "$HDI" install --raw --ni "$FIXTURES/formatted-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Installation"* ]]
+  [[ "$output" != *"**Installation**"* ]]
+}
+
+# ── Multi-line commands ────────────────────────────────────────────────────
+
+@test "multiline: joins backslash-continued docker build" {
+  run "$HDI" install --raw --ni "$FIXTURES/multiline-commands"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"docker build"* ]]
+  [[ "$output" == *"-t myapp:latest"* ]]
+  # Should be a single joined line, not separate fragments
+  [[ "$output" != *$'\n'"  -t myapp"* ]]
+}
+
+@test "multiline: joins backslash-continued docker run" {
+  run "$HDI" run --raw --ni "$FIXTURES/multiline-commands"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"docker run"*"--name myapp"*"-p 8080:80"*"myapp:latest"* ]]
+}
+
+@test "multiline: single-line commands unaffected" {
+  run "$HDI" run --raw --ni "$FIXTURES/multiline-commands"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"docker ps"* ]]
+}
+
+# ── Console blocks ─────────────────────────────────────────────────────────
+
+@test "console blocks: extracts prompted commands" {
+  run "$HDI" install --raw --ni "$FIXTURES/console-blocks"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install -g cli-tool"* ]]
+  [[ "$output" == *"cli-tool init"* ]]
+}
+
+@test "console blocks: skips output lines" {
+  run "$HDI" install --raw --ni "$FIXTURES/console-blocks"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"npm added 42"* ]]
+  [[ "$output" != *"Initialized new project"* ]]
+}
+
+@test "console blocks: coexists with regular bash blocks" {
+  run "$HDI" run --raw --ni "$FIXTURES/console-blocks"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cli-tool build"* ]]
+  [[ "$output" == *"cli-tool serve"* ]]
+  [[ "$output" != *"Building..."* ]]
+}
+
+# ── Expanded CMD_PREFIXES ──────────────────────────────────────────────────
+
+@test "expanded prefixes: extracts mix commands from backticks" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-prefixes"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"mix deps.get"* ]]
+}
+
+@test "expanded prefixes: extracts composer commands from backticks" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-prefixes"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"composer install"* ]]
+}
+
+@test "expanded prefixes: extracts flutter commands from backticks" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-prefixes"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"flutter pub get"* ]]
+}
+
+@test "expanded prefixes: extracts just and conda from backticks" {
+  run "$HDI" run --raw --ni "$FIXTURES/expanded-prefixes"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"just serve"* ]]
+  [[ "$output" == *"conda activate myenv"* ]]
+}
+
+# ── Expanded SKIP_LANGS ───────────────────────────────────────────────────
+
+@test "expanded skips: skips graphql blocks" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-skips"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"type Query"* ]]
+}
+
+@test "expanded skips: skips diff blocks" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-skips"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"old line"* ]]
+}
+
+@test "expanded skips: skips mermaid and hcl blocks" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-skips"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"graph TD"* ]]
+  [[ "$output" != *"variable"* ]]
+}
+
+@test "expanded skips: still extracts bash blocks alongside skipped ones" {
+  run "$HDI" install --raw --ni "$FIXTURES/expanded-skips"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+  [[ "$output" == *"npm run setup"* ]]
+}
+
+# ── Setext headings ───────────────────────────────────────────────────────
+
+@test "setext headings: matches underlined headings" {
+  run "$HDI" install --raw --ni "$FIXTURES/setext-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+  [[ "$output" == *"npm start"* ]]
+}
+
+@test "setext headings: test mode works with setext" {
+  run "$HDI" test --raw --ni "$FIXTURES/setext-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm test"* ]]
+}
+
+@test "setext headings: all mode includes build section" {
+  run "$HDI" all --raw --ni "$FIXTURES/setext-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm run build"* ]]
+  [[ "$output" == *"npm install"* ]]
+  [[ "$output" == *"npm test"* ]]
+}
+
+@test "setext headings: section title appears in output" {
+  run "$HDI" install --raw --ni "$FIXTURES/setext-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Getting Started"* ]]
+}
+
+# ── Indented code blocks ──────────────────────────────────────────────────
+
+@test "indented code: extracts 4-space indented commands" {
+  run "$HDI" install --raw --ni "$FIXTURES/indented-code"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip install old-project"* ]]
+  [[ "$output" == *"pip install -r requirements.txt"* ]]
+}
+
+@test "indented code: does not extract indented prose" {
+  run "$HDI" run --raw --ni "$FIXTURES/indented-code"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"python manage.py runserver"* ]]
+  [[ "$output" != *"just a note"* ]]
+}
+
+# ── Keyword refinements ──────────────────────────────────────────────────
+
+@test "keywords: 'Usage' at start of heading matches run mode" {
+  run "$HDI" run --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"myapp serve"* ]]
+}
+
+@test "keywords: 'Memory Usage' does not match run mode" {
+  run "$HDI" all --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"512MB"* ]]
+}
+
+@test "keywords: 'Development' matches run mode" {
+  run "$HDI" run --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm run dev"* ]]
+}
+
+@test "keywords: 'spec' dropped — API Specification does not match test mode" {
+  run "$HDI" test --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"OpenAPI"* ]]
+}
+
+@test "keywords: 'Docker' matches install mode" {
+  run "$HDI" install --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"docker compose up -d"* ]]
+}
+
+@test "keywords: 'Available Scripts' matches run mode" {
+  run "$HDI" run --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm run lint"* ]]
+}
+
+@test "keywords: 'How to Install' matches install mode" {
+  run "$HDI" install --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip install keyword-app"* ]]
+}
+
+@test "keywords: 'Compilation' matches all mode" {
+  run "$HDI" all --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"make all"* ]]
+}
+
+@test "keywords: 'Deployment' matches all mode" {
+  run "$HDI" all --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"kubectl apply"* ]]
+}
+
+@test "keywords: 'Dependencies' matches install mode (depend group fix)" {
+  run "$HDI" install --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+}
+
+@test "keywords: 'Make Targets' matches run mode" {
+  run "$HDI" run --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"make clean"* ]]
+  [[ "$output" == *"make build"* ]]
+}
