@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# bench/run — benchmark hdi against static READMEs and report timings.
+#
+# Usage:
+#   ./bench/run              # run benchmarks, print results, append to log
+#   ./bench/run --no-log     # run benchmarks, print results only
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+HDI="$ROOT_DIR/hdi"
+LOG="$SCRIPT_DIR/results.csv"
+RUNS=5  # iterations per fixture for stable median
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+median() {
+  sort -n | awk '{a[NR]=$1} END {print a[int((NR+1)/2)]}'
+}
+
+time_ms() {
+  local start end
+  start=$(/usr/bin/perl -MTime::HiRes=time -e 'printf "%.6f\n", time')
+  "$@" >/dev/null 2>&1
+  end=$(/usr/bin/perl -MTime::HiRes=time -e 'printf "%.6f\n", time')
+  /usr/bin/perl -e "printf \"%.1f\n\", ($end - $start) * 1000"
+}
+
+# ── Version info ─────────────────────────────────────────────────────────────
+
+version=$(grep -m1 '^VERSION=' "$HDI" | sed 's/VERSION="//;s/"//')
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# ── Benchmark ────────────────────────────────────────────────────────────────
+
+declare -a names=()
+declare -a lines=()
+declare -a medians=()
+
+for readme in "$SCRIPT_DIR"/small.md "$SCRIPT_DIR"/medium.md "$SCRIPT_DIR"/large.md "$SCRIPT_DIR"/stress.md; do
+  [[ -f "$readme" ]] || continue
+  name=$(basename "$readme" .md)
+  linecount=$(wc -l < "$readme" | tr -d ' ')
+
+  # Warm-up run (prime disk cache)
+  "$HDI" all --ni "$readme" >/dev/null 2>&1 || true
+
+  timings=""
+  for (( i=0; i<RUNS; i++ )); do
+    ms=$(time_ms "$HDI" all --ni "$readme")
+    timings+="$ms"$'\n'
+  done
+
+  med=$(echo "$timings" | grep -v '^$' | median)
+
+  names+=("$name")
+  lines+=("$linecount")
+  medians+=("$med")
+done
+
+# ── Print results ────────────────────────────────────────────────────────────
+
+printf "\n"
+printf "  hdi %s\n" "$version"
+printf "  %s — %d runs per fixture\n\n" "$timestamp" "$RUNS"
+printf "  %-12s %6s %8s\n" "Fixture" "Lines" "Median"
+printf "  %-12s %6s %8s\n" "───────" "─────" "──────"
+for i in "${!names[@]}"; do
+  printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${medians[$i]}"
+done
+printf "\n"
+
+# ── Log to CSV ───────────────────────────────────────────────────────────────
+
+if [[ "${1:-}" == "--no-log" ]]; then
+  exit 0
+fi
+
+if [[ ! -f "$LOG" ]]; then
+  echo "timestamp,version,fixture,lines,median_ms" > "$LOG"
+fi
+
+# Remove any existing rows for this version (keep header + other versions)
+tmpfile=$(mktemp)
+awk -F, -v ver="$version" 'NR==1 || $2 != ver' "$LOG" > "$tmpfile"
+mv "$tmpfile" "$LOG"
+
+# Append new rows
+for i in "${!names[@]}"; do
+  echo "$timestamp,$version,${names[$i]},${lines[$i]},${medians[$i]}" >> "$LOG"
+done
+
+printf "  Logged to bench/results.csv\n\n"

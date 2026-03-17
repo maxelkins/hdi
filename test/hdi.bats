@@ -39,6 +39,12 @@ setup() {
   [[ "$output" == *"npm install"* ]]
 }
 
+@test "direct .md file path argument works" {
+  run "$HDI" --raw "$FIXTURES/node-express/README.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+}
+
 # ── README discovery ────────────────────────────────────────────────────────
 
 @test "finds lowercase readme.md" {

@@ -52,6 +52,7 @@ hdi run                Just run/start commands (aliases: start, r)
 hdi test               Just test commands (alias: t)
 hdi all                All sections (aliases: a)
 hdi /path/to/project   Scan a different directory
+hdi /path/to/file.md   Parse a specific markdown file
 ```
 
 Short forms:
@@ -123,6 +124,17 @@ vhs ./demo/demo.tape
 ```
 
 This outputs `demo.gif` from the tape file.
+
+## Benchmarking
+
+Static benchmark READMEs in `bench/` (small, medium, large, stress) exercise every parsing path at different scales. Run benchmarks with:
+
+```bash
+./bench/run              # run and append to bench/results.md
+./bench/run --no-log     # print results only, don't log
+```
+
+Benchmarks run automatically during `./release` and are recorded in `bench/results.csv`.
 
 ## Publishing a new release
 

@@ -57,12 +57,19 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
-# ── Bump, commit, tag, push ─────────────────────────────────────────────────
+# ── Bump, benchmark, commit, tag, push ────────────────────────────────────
 
 echo "Releasing: $current → $new ($tag)"
 
 sed -i.bak "s/^VERSION=\"$current\"/VERSION=\"$new\"/" "$HDI" && rm -f "$HDI.bak"
-git add hdi
+
+# Run benchmarks against the new version
+if [[ -x "$SCRIPT_DIR/bench/run" ]]; then
+  echo ""
+  "$SCRIPT_DIR/bench/run"
+fi
+
+git add hdi bench/results.csv
 git commit -m "Bump version to $new"
 git tag "$tag"
 git push origin HEAD --tags
