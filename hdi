@@ -127,12 +127,19 @@ parse_sections() {
   local body=""
   local prev_line=""
   local have_prev=false
+  local ps_in_code=false
+  local ps_fence_char=""
 
   shopt -s nocasematch
 
-  # Helper: process a detected heading at a given level
+  # Helper: process a detected heading at a given level.
+  # Sets _ps_started_new=true when a new section is started, so the
+  # caller knows whether non-matching sub-headings should be kept in body.
+  _ps_started_new=false
+
   _ps_handle_heading() {
     local text="$1" level="$2"
+    _ps_started_new=false
     # Strip trailing ATX closing hashes
     if [[ "$text" =~ ^(.*[^#[:space:]])[[:space:]]*#+ ]]; then
       text="${BASH_REMATCH[1]}"
@@ -143,11 +150,21 @@ parse_sections() {
     while [[ "$text" =~ ^(.*)__([^_]+)__(.*) ]]; do text="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"; done
     while [[ "$text" =~ ^(.*)_([^_]+)_(.*) ]]; do text="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"; done
 
-    if $in_section && (( level <= section_level )); then
-      SECTION_TITLES+=("$heading_text")
-      SECTION_BODIES+=("$body")
-      in_section=false
-      body=""
+    # Save the current section if a same-or-higher-level heading arrives,
+    # or if a deeper-level heading also matches (avoids losing parent body)
+    if $in_section; then
+      if (( level <= section_level )); then
+        SECTION_TITLES+=("$heading_text")
+        SECTION_BODIES+=("$body")
+        in_section=false
+        body=""
+      elif [[ "$text" =~ $PATTERN ]]; then
+        # Deeper child heading also matches — save parent body first
+        SECTION_TITLES+=("$heading_text")
+        SECTION_BODIES+=("$body")
+        in_section=false
+        body=""
+      fi
     fi
 
     if [[ "$text" =~ $PATTERN ]]; then
@@ -155,16 +172,51 @@ parse_sections() {
       section_level=$level
       heading_text="$text"
       body=""
+      _ps_started_new=true
     fi
   }
 
   while IFS= read -r line; do
+    # Track fenced code blocks so comments/content inside them
+    # are not misinterpreted as headings
+    if [[ "$line" =~ ^[[:space:]]*(\`{3,}|~{3,}) ]]; then
+      local ps_matched="${BASH_REMATCH[1]}"
+      if $ps_in_code; then
+        [[ "${ps_matched:0:1}" == "$ps_fence_char" ]] && ps_in_code=false && ps_fence_char=""
+      else
+        ps_in_code=true
+        ps_fence_char="${ps_matched:0:1}"
+      fi
+      # Still include fence lines in body if we're in a section
+      if $have_prev; then
+        if $in_section; then body+="$prev_line"$'\n'; fi
+        have_prev=false; prev_line=""
+      fi
+      if $in_section; then body+="$line"$'\n'; fi
+      continue
+    fi
+
+    # Inside a code block — skip heading detection, just accumulate body
+    if $ps_in_code; then
+      if $have_prev; then
+        if $in_section; then body+="$prev_line"$'\n'; fi
+        have_prev=false; prev_line=""
+      fi
+      if $in_section; then body+="$line"$'\n'; fi
+      continue
+    fi
+
     # Check for setext underline: current line is ===+ or ---+ (3+ chars)
     if $have_prev && [[ "$line" =~ ^[[:space:]]*(={3,}|-{3,})[[:space:]]*$ ]]; then
       local setext_char="${BASH_REMATCH[1]:0:1}"
       local level=2
       [[ "$setext_char" == "=" ]] && level=1
       _ps_handle_heading "$prev_line" "$level"
+      # Keep non-matching setext sub-headings in body (as ATX) for sub-grouping
+      if $in_section && ! $_ps_started_new; then
+        if (( level == 1 )); then body+="# $prev_line"$'\n'
+        else body+="## $prev_line"$'\n'; fi
+      fi
       have_prev=false
       prev_line=""
       continue
@@ -177,6 +229,22 @@ parse_sections() {
         local level=${#hashes}
         local text="${BASH_REMATCH[2]}"
         _ps_handle_heading "$text" "$level"
+        # Keep non-matching ATX sub-headings in body for sub-grouping
+        if $in_section && ! $_ps_started_new; then
+          body+="$prev_line"$'\n'
+        fi
+      elif [[ "$prev_line" =~ ^[[:space:]]*\*\*([^*]+)\*\*[[:space:]]*$ ]]; then
+        # Bold pseudo-heading: when not inside a real heading's section,
+        # check against keywords so e.g. **Run application** matches run mode.
+        # When inside a real section, keep it in body for sub-group display.
+        local bold_text="${BASH_REMATCH[1]}"
+        _ps_started_new=false
+        if ! $in_section || (( section_level == 7 )); then
+          _ps_handle_heading "$bold_text" 7
+        fi
+        if $in_section && ! $_ps_started_new; then
+          body+="$prev_line"$'\n'
+        fi
       elif $in_section; then
         body+="$prev_line"$'\n'
       fi
@@ -187,12 +255,24 @@ parse_sections() {
   done
 
   # Process final buffered line
-  if $have_prev; then
+  if $have_prev && ! $ps_in_code; then
     if [[ "$prev_line" =~ ^(#{1,6})[[:space:]]+(.*) ]]; then
       local hashes="${BASH_REMATCH[1]}"
       local level=${#hashes}
       local text="${BASH_REMATCH[2]}"
       _ps_handle_heading "$text" "$level"
+      if $in_section && ! $_ps_started_new; then
+        body+="$prev_line"$'\n'
+      fi
+    elif [[ "$prev_line" =~ ^[[:space:]]*\*\*([^*]+)\*\*[[:space:]]*$ ]]; then
+      local bold_text="${BASH_REMATCH[1]}"
+      _ps_started_new=false
+      if ! $in_section || (( section_level == 7 )); then
+        _ps_handle_heading "$bold_text" 7
+      fi
+      if $in_section && ! $_ps_started_new; then
+        body+="$prev_line"$'\n'
+      fi
     elif $in_section; then
       body+="$prev_line"$'\n'
     fi
@@ -275,6 +355,15 @@ strip_prompt() {
   fi
 }
 
+# Extract commands from section body text.
+# Sets _EC_RESULT instead of printing to stdout (avoids subshell per call).
+#
+# When _EC_GROUPED=true, sub-headings (##+ ) and bold pseudo-headings
+# (**text**) in the prose are emitted as marker lines prefixed with \x01
+# so the caller can create display sub-groups without a second pass.
+_EC_GROUPED=false
+_EC_SUBHDR=$'\x01'
+
 extract_commands() {
   local content="$1"
   local commands=""
@@ -284,6 +373,7 @@ extract_commands() {
   local continuation_buf=""
   local console_mode=false
   local indented_buf=""
+  local line iline inline_cmds inline_cmd
 
   while IFS= read -r line; do
     if [[ "$line" =~ ^[[:space:]]*(\`{3,}|~{3,}) ]]; then
@@ -346,6 +436,22 @@ extract_commands() {
         commands+="$stripped"$'\n'
       fi
     elif ! $in_code; then
+      # Detect sub-headings and bold pseudo-headings for display grouping
+      if $_EC_GROUPED; then
+        if [[ "$line" =~ ^#{2,6}[[:space:]]+(.*) ]]; then
+          local _ec_label="${BASH_REMATCH[1]}"
+          if [[ "$_ec_label" =~ ^(.*[^#[:space:]])[[:space:]]*#+ ]]; then
+            _ec_label="${BASH_REMATCH[1]}"
+          fi
+          while [[ "$_ec_label" =~ ^(.*)\*\*([^*]+)\*\*(.*) ]]; do _ec_label="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"; done
+          while [[ "$_ec_label" =~ ^(.*)\*([^*]+)\*(.*) ]]; do _ec_label="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"; done
+          commands+="${_EC_SUBHDR}${_ec_label}"$'\n'
+          # Fall through to check inline backtick cmds in heading text
+        elif [[ "$line" =~ ^[[:space:]]*\*\*([^*]+)\*\*[[:space:]]*$ ]]; then
+          commands+="${_EC_SUBHDR}${BASH_REMATCH[1]}"$'\n'
+          continue
+        fi
+      fi
       # Detect indented code blocks (4+ spaces or tab)
       if [[ "$line" =~ ^(\ {4,}|	) ]] && [[ -n "${line//[[:space:]]/}" ]]; then
         local dedented="${line#    }"
@@ -370,7 +476,7 @@ extract_commands() {
       fi
 
       find_backtick_commands "$line"
-      local inline_cmds="$_FBC_RESULT"
+      inline_cmds="$_FBC_RESULT"
       if [[ -n "$inline_cmds" ]]; then
         while IFS= read -r inline_cmd; do
           commands+="$inline_cmd"$'\n'
@@ -395,15 +501,16 @@ extract_commands() {
     indented_buf=""
   fi
 
-  printf '%s' "$commands"
+  _EC_RESULT="$commands"
 }
 
 # ── Build a flat list: section headers + commands ────────────────────────────
-# Each entry is either a "header" or a "command". We store parallel arrays
-# for the display lines, their types, and (for commands) the actual command.
+# Each entry is either a "header", "subheader", "command", or "empty".
+# We store parallel arrays for the display lines, their types, and
+# (for commands) the actual command.
 
 declare -a DISPLAY_LINES=()   # what to print
-declare -a LINE_TYPES=()      # "header" | "command" | "empty"
+declare -a LINE_TYPES=()      # "header" | "subheader" | "command" | "empty"
 declare -a LINE_CMDS=()       # the raw command (only for type=command)
 declare -a CMD_INDICES=()     # indices into DISPLAY_LINES that are commands
 
@@ -411,47 +518,86 @@ build_display_list() {
   for i in "${!SECTION_TITLES[@]}"; do
     local title="${SECTION_TITLES[$i]}"
     local body="${SECTION_BODIES[$i]}"
-    local cmds
-    cmds=$(extract_commands "$body")
-
-    # Extract commands from backtick-wrapped text in the heading itself
-    # (eg. ### `yarn start` — the command is the heading)
-    find_backtick_commands "$title" false
-    local title_cmds="$_FBC_RESULT"
-    if [[ -n "$title_cmds" ]]; then
-      while IFS= read -r tcmd; do
-        cmds="$tcmd"$'\n'"$cmds"
-      done <<< "$title_cmds"
-    fi
-
-    # Deduplicate commands (pure bash, no awk subprocess)
-    if [[ -n "$cmds" ]]; then
-      local _deduped="" _dup
-      while IFS= read -r _cmd; do
-        [[ -z "$_cmd" ]] && continue
-        _dup=false
-        while IFS= read -r _existing; do
-          [[ "$_existing" == "$_cmd" ]] && _dup=true && break
-        done <<< "$_deduped"
-        $_dup || _deduped+="$_cmd"$'\n'
-      done <<< "$cmds"
-      cmds="$_deduped"
-    fi
 
     # Section header
     DISPLAY_LINES+=("$title")
     LINE_TYPES+=("header")
     LINE_CMDS+=("")
 
-    if [[ -n "$cmds" ]]; then
-      while IFS= read -r cmd; do
-        [[ -z "$cmd" ]] && continue
+    # Extract commands from backtick-wrapped text in the heading itself
+    # (eg. ### `yarn start` — the command is the heading)
+    find_backtick_commands "$title" false
+    local title_cmds="$_FBC_RESULT"
+    local has_cmds=false
+    if [[ -n "$title_cmds" ]]; then
+      while IFS= read -r tcmd; do
+        [[ -z "$tcmd" ]] && continue
+        has_cmds=true
         CMD_INDICES+=("${#DISPLAY_LINES[@]}")
-        DISPLAY_LINES+=("$cmd")
+        DISPLAY_LINES+=("$tcmd")
         LINE_TYPES+=("command")
-        LINE_CMDS+=("$cmd")
+        LINE_CMDS+=("$tcmd")
+      done <<< "$title_cmds"
+    fi
+
+    # Extract commands with sub-group markers (single pass over the body).
+    # Sub-headings and bold pseudo-headings produce \x01-prefixed marker
+    # lines; everything else is a command or empty line.
+    _EC_GROUPED=true
+    extract_commands "$body"
+    _EC_GROUPED=false
+    local cmds="$_EC_RESULT"
+
+    # Deduplicate commands within each sub-group (pure bash, no awk)
+    if [[ -n "$cmds" ]]; then
+      local _deduped="" _dup _cur_group="" _group_seen=""
+      while IFS= read -r _cmd; do
+        [[ -z "$_cmd" ]] && continue
+        # Sub-header marker — reset per-group seen list
+        if [[ "$_cmd" == "$_EC_SUBHDR"* ]]; then
+          _deduped+="$_cmd"$'\n'
+          _group_seen=""
+          continue
+        fi
+        _dup=false
+        if [[ -n "$_group_seen" ]]; then
+          while IFS= read -r _existing; do
+            [[ "$_existing" == "$_cmd" ]] && _dup=true && break
+          done <<< "$_group_seen"
+        fi
+        if ! $_dup; then
+          _deduped+="$_cmd"$'\n'
+          _group_seen+="$_cmd"$'\n'
+        fi
       done <<< "$cmds"
-    else
+      cmds="$_deduped"
+    fi
+
+    # Build display entries from the flat command list with markers
+    if [[ -n "$cmds" ]]; then
+      local _pending_label=""
+      while IFS= read -r _entry; do
+        [[ -z "$_entry" ]] && continue
+        if [[ "$_entry" == "$_EC_SUBHDR"* ]]; then
+          _pending_label="${_entry:1}"
+          continue
+        fi
+        # Emit the sub-header only when its group has commands
+        if [[ -n "$_pending_label" ]]; then
+          DISPLAY_LINES+=("$_pending_label")
+          LINE_TYPES+=("subheader")
+          LINE_CMDS+=("")
+          _pending_label=""
+        fi
+        has_cmds=true
+        CMD_INDICES+=("${#DISPLAY_LINES[@]}")
+        DISPLAY_LINES+=("$_entry")
+        LINE_TYPES+=("command")
+        LINE_CMDS+=("$_entry")
+      done <<< "$cmds"
+    fi
+
+    if ! $has_cmds; then
       DISPLAY_LINES+=("(no commands — use --full to see prose)")
       LINE_TYPES+=("empty")
       LINE_CMDS+=("")
@@ -476,6 +622,13 @@ render_static() {
           printf "\n## %s\n" "$line"
         else
           printf "\n%s%s ▸ %s%s\n" "$BOLD" "$CYAN" "$line" "$RESET"
+        fi
+        ;;
+      subheader)
+        if $RAW; then
+          printf "\n### %s\n" "$line"
+        else
+          printf "\n  %s%s%s%s\n" "$BOLD" "$MAGENTA" "$line" "$RESET"
         fi
         ;;
       command)
@@ -646,6 +799,10 @@ draw_picker() {
     case "$type" in
       header)
         printf "\n%s%s ▸ %s%s\n" "$BOLD" "$CYAN" "$line" "$RESET"
+        (( count += 2 ))
+        ;;
+      subheader)
+        printf "\n  %s%s%s%s\n" "$BOLD" "$MAGENTA" "$line" "$RESET"
         (( count += 2 ))
         ;;
       command)

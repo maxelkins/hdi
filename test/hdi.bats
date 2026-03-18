@@ -996,3 +996,181 @@ else:
   [[ "$output" == *"make clean"* ]]
   [[ "$output" == *"make build"* ]]
 }
+
+# ── Code fence tracking in section parser ────────────────────────────────────
+
+@test "code-fence: comments inside code blocks are not parsed as headings" {
+  run "$HDI" --raw --ni "$FIXTURES/code-fence-in-section"
+  [ "$status" -eq 0 ]
+  # "# This is a comment" should NOT appear as a section heading
+  [[ "$output" != *"## This is a comment"* ]]
+  [[ "$output" != *"## Required for production"* ]]
+  [[ "$output" != *"## Note:"* ]]
+}
+
+@test "code-fence: commands after in-block comments are extracted correctly" {
+  run "$HDI" --raw --ni "$FIXTURES/code-fence-in-section"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"myapp serve --port 8080"* ]]
+  [[ "$output" == *"myapp configure --env production"* ]]
+}
+
+@test "code-fence: section structure is preserved around fenced blocks" {
+  run "$HDI" --raw --ni "$FIXTURES/code-fence-in-section"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Installation"* ]]
+  [[ "$output" == *"pip install myapp"* ]]
+  [[ "$output" == *"## Usage"* ]]
+}
+
+@test "code-fence: --full mode does not crash on code block comments" {
+  run "$HDI" --raw --full "$FIXTURES/code-fence-in-section"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip install myapp"* ]]
+  [[ "$output" == *"myapp serve"* ]]
+}
+
+@test "code-fence: bash comment lines inside blocks are extracted as commands" {
+  # Bash comments (# ...) inside code blocks ARE part of the command block
+  run "$HDI" --raw --ni "$FIXTURES/code-fence-in-section"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"# This is a comment, not a heading"* ]]
+}
+
+# ── Nested section body preservation ─────────────────────────────────────────
+
+@test "nested-match: parent section body is preserved when child heading matches" {
+  run "$HDI" --raw --ni "$FIXTURES/nested-match-loss"
+  [ "$status" -eq 0 ]
+  # "Set up" body (docker commands) must NOT be lost when "Prerequisites" matches
+  [[ "$output" == *"docker compose build"* ]]
+  [[ "$output" == *"docker compose up -d"* ]]
+}
+
+@test "nested-match: parent section appears as its own section" {
+  run "$HDI" --raw --ni "$FIXTURES/nested-match-loss"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Set up"* ]]
+}
+
+@test "nested-match: child matching section also appears" {
+  run "$HDI" --raw --ni "$FIXTURES/nested-match-loss"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Prerequisites"* ]]
+}
+
+@test "nested-match: non-matching sub-heading within parent shows as sub-group" {
+  run "$HDI" --raw --ni "$FIXTURES/nested-match-loss"
+  [ "$status" -eq 0 ]
+  # "Database setup" is a ### inside "Set up" that doesn't match keywords
+  # but should be preserved as a sub-heading group
+  [[ "$output" == *"### Database setup"* ]]
+  [[ "$output" == *"rails db:migrate"* ]]
+}
+
+@test "nested-match: deeper matching heading also shown in all mode" {
+  run "$HDI" all --raw --ni "$FIXTURES/nested-match-loss"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Set up"* ]]
+  [[ "$output" == *"## Database setup"* ]]
+  [[ "$output" == *"## Prerequisites"* ]]
+  [[ "$output" == *"## Testing"* ]]
+}
+
+# ── Bold-text pseudo-headings ────────────────────────────────────────────────
+
+@test "bold-pseudo: standalone bold text creates sub-groups" {
+  run "$HDI" --raw --ni "$FIXTURES/bold-pseudo-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"### Install dependencies"* ]]
+  [[ "$output" == *"### Configure environment"* ]]
+  [[ "$output" == *"### Build the application"* ]]
+  [[ "$output" == *"### Start the server"* ]]
+}
+
+@test "bold-pseudo: commands appear under their bold sub-group" {
+  run "$HDI" --raw --ni "$FIXTURES/bold-pseudo-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+  [[ "$output" == *"cp .env.example .env"* ]]
+  [[ "$output" == *"npm run build"* ]]
+  [[ "$output" == *"npm start"* ]]
+}
+
+@test "bold-pseudo: test mode also shows bold sub-groups" {
+  run "$HDI" test --raw --ni "$FIXTURES/bold-pseudo-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"### Unit tests"* ]]
+  [[ "$output" == *"npm test"* ]]
+  [[ "$output" == *"### Integration tests"* ]]
+  [[ "$output" == *"npm run test:integration"* ]]
+}
+
+@test "bold-pseudo: section header is the markdown heading, not bold text" {
+  run "$HDI" --raw --ni "$FIXTURES/bold-pseudo-headings"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"## Set up"* ]]
+}
+
+# ── Bold pseudo-heading keyword matching ──────────────────────────────────────
+
+@test "bold-pseudo-kw: bold 'Run application' matches run mode" {
+  run "$HDI" run --raw --ni "$FIXTURES/bold-pseudo-keywords"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"docker compose up -d"* ]]
+}
+
+@test "bold-pseudo-kw: bold 'Set up' matches install mode" {
+  run "$HDI" install --raw --ni "$FIXTURES/bold-pseudo-keywords"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm install"* ]]
+}
+
+@test "bold-pseudo-kw: bold 'Run tests' matches test mode" {
+  run "$HDI" test --raw --ni "$FIXTURES/bold-pseudo-keywords"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm test"* ]]
+}
+
+@test "bold-pseudo-kw: run mode does not include install-only sections" {
+  run "$HDI" run --raw --ni "$FIXTURES/bold-pseudo-keywords"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"npm install"* ]]
+}
+
+# ── Sub-heading display groups ───────────────────────────────────────────────
+
+@test "sub-groups: non-matching sub-headings create display groups" {
+  run "$HDI" --raw --ni "$FIXTURES/sub-heading-groups"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"### macOS"* ]]
+  [[ "$output" == *"brew install node"* ]]
+  [[ "$output" == *"### Linux"* ]]
+  [[ "$output" == *"apt-get install nodejs"* ]]
+}
+
+@test "sub-groups: sub-headings without commands are not shown" {
+  run "$HDI" --raw --ni "$FIXTURES/sub-heading-groups"
+  [ "$status" -eq 0 ]
+  # "Windows" has no code blocks, so it should not appear as a sub-header
+  [[ "$output" != *"### Windows"* ]]
+  # "Monitoring" has no code blocks either
+  [[ "$output" != *"### Monitoring"* ]]
+}
+
+@test "sub-groups: multiple commands under one sub-heading" {
+  run "$HDI" --raw --ni "$FIXTURES/sub-heading-groups"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"### After cloning"* ]]
+  [[ "$output" == *"npm install"* ]]
+  [[ "$output" == *"npm run dev"* ]]
+}
+
+@test "sub-groups: run mode shows sub-headings within matched section" {
+  run "$HDI" run --raw --ni "$FIXTURES/sub-heading-groups"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"### In production mode"* ]]
+  [[ "$output" == *"npm run serve"* ]]
+  [[ "$output" == *"### In staging mode"* ]]
+  [[ "$output" == *"npm run serve --env staging"* ]]
+}
