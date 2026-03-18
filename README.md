@@ -53,22 +53,22 @@ hdi /path/to/project   Scan a different directory
 hdi /path/to/file.md   Parse a specific markdown file
 ```
 
-Short forms:
+Short-forms:
 
 ```
-hdi i                  Install/setup commands
-hdi r                  Run/start commands
-hdi t                  Test commands
-hdi a                  All sections
+hdi i      Install/setup commands
+hdi r      Run/start commands
+hdi t      Test commands
+hdi a      All sections
 ```
 
 ### Flags
 
 ```
--h, --help               Show help
--v, --version            Show version
--f, --full               Show surrounding prose, not just commands
-    --raw                Plain markdown output (no colour, for piping)
+-h, --help                   Show help
+-v, --version                Show version
+-f, --full                   Show surrounding prose, not just commands
+    --raw                    Plain markdown output (no colour, for piping)
     --ni, --no-interactive   Non-interactive (just print, no picker)
 ```
 
