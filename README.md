@@ -19,6 +19,8 @@ $ hdi
   ↑↓ navigate  ⏎ execute  c copy  q quit
 ```
 
+See the [blog post](https://blog.gregdev.com/posts/2026-03-18-hdi-a-cli-tool-to-extract-run-commands-from-project-readmes/) for more background information.
+
 ## Example
 
 ![Animated demo showing the tool in action](./demo/demo.gif)
