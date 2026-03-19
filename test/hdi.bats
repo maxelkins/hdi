@@ -948,6 +948,12 @@ else:
   [[ "$output" == *"npm run dev"* ]]
 }
 
+@test "keywords: 'Dev' heading matches run mode" {
+  run "$HDI" run --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm start"* ]]
+}
+
 @test "keywords: 'spec' dropped — API Specification does not match test mode" {
   run "$HDI" test --raw --ni "$FIXTURES/keyword-refinements"
   [ "$status" -eq 0 ]

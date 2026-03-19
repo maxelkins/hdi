@@ -17,6 +17,12 @@ Typically around 512MB under load.
 npm run dev
 ```
 
+## Dev
+
+```bash
+npm start
+```
+
 ## API Specification
 
 This documents the OpenAPI spec for the REST endpoints.
