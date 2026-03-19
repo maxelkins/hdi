@@ -147,6 +147,7 @@ Static benchmark READMEs in `bench/` (small, medium, large, stress) exercise eve
 
 ```bash
 ./bench/run              # run benchmarks, print results
+./bench/run --compare    # compare current results against last logged release
 ./bench/run --log        # also save to bench/results.csv (should only be used by release script / only run when creating a new release)
 ```
 

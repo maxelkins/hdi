@@ -4,6 +4,7 @@
 # Usage:
 #   ./bench/run              # run benchmarks, print results only
 #   ./bench/run --log        # also save to bench/results.csv (used by release)
+#   ./bench/run --compare    # compare current results against last logged release
 
 set -euo pipefail
 
@@ -79,21 +80,60 @@ for readme in "$SCRIPT_DIR"/small.md "$SCRIPT_DIR"/medium.md "$SCRIPT_DIR"/large
   medians+=("$med")
 done
 
+# ── Parse flags ──────────────────────────────────────────────────────────────
+
+DO_LOG=false
+DO_COMPARE=false
+for flag in "$@"; do
+  case "$flag" in
+    --log)     DO_LOG=true ;;
+    --compare) DO_COMPARE=true ;;
+  esac
+done
+
 # ── Print results ────────────────────────────────────────────────────────────
 
 printf "\n"
 printf "  hdi %s on %s\n" "$version" "$machine"
 printf "  %s — %d runs per fixture\n\n" "$timestamp" "$RUNS"
-printf "  %-12s %6s %8s\n" "Fixture" "Lines" "Median"
-printf "  %-12s %6s %8s\n" "─────────────────────────────"
-for i in "${!names[@]}"; do
-  printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${medians[$i]}"
-done
+
+if $DO_COMPARE && [[ -f "$LOG" ]]; then
+  # Find the latest logged version
+  prev_version=$(awk -F, 'NR>1 {print $2}' "$LOG" | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+
+  if [[ -n "$prev_version" ]]; then
+    printf "  %-12s %6s %10s %10s %8s\n" "Fixture" "Lines" "Current" "v$prev_version" "Δ"
+    printf "  ────────────────────────────────────────────────────\n"
+    for i in "${!names[@]}"; do
+      fixture="${names[$i]}"
+      cur="${medians[$i]}"
+      prev=$(awk -F, -v ver="$prev_version" -v fix="$fixture" '$2==ver && $4==fix {print $6}' "$LOG")
+      if [[ -n "$prev" ]]; then
+        delta=$(/usr/bin/perl -e "printf '%+.1f%%', (($cur - $prev) / $prev) * 100")
+        printf "  %-12s %6s %8sms %8sms %8s\n" "$fixture" "${lines[$i]}" "$cur" "$prev" "$delta"
+      else
+        printf "  %-12s %6s %8sms %8s- %8s\n" "$fixture" "${lines[$i]}" "$cur" "" "-"
+      fi
+    done
+  else
+    printf "  %-12s %6s %9s\n" "Fixture" "Lines" "Median"
+    printf "  ──────────────────────────────\n"
+    for i in "${!names[@]}"; do
+      printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${medians[$i]}"
+    done
+  fi
+else
+  printf "  %-12s %6s %9s\n" "Fixture" "Lines" "Median"
+  printf "  ──────────────────────────────\n"
+  for i in "${!names[@]}"; do
+    printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${medians[$i]}"
+  done
+fi
 printf "\n"
 
 # ── Log to CSV ───────────────────────────────────────────────────────────────
 
-if [[ "${1:-}" != "--log" ]]; then
+if ! $DO_LOG; then
   exit 0
 fi
 
