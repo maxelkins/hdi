@@ -42,6 +42,8 @@
     termEl.innerHTML = "";
     appendLine("t-dim", "cd " + p.name);
     appendLine("", "");
+    appendLine("t-dim", 'Type "hdi" to get started, "hdi --help" for more options, or "cat README.md" to see the full project README');
+    appendLine("", "");
     showPrompt();
     termEl.focus();
   }
@@ -334,10 +336,5 @@
   // ── Init ─────────────────────────────────────────────────────────────────
 
   buildSidebar();
-  appendLine("t-dim", "cd " + currentProject.name);
-  appendLine("", "");
-  appendLine("t-dim", 'Type "hdi" to get started, "hdi --help" for more options, or "cat README.md" to see the full project README');
-  appendLine("", "");
-  showPrompt();
-  termEl.focus();
+  selectProject(currentProject);
 })();
