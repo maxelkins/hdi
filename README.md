@@ -103,6 +103,12 @@ The source is split across files in `src/` for maintainability. The distributed 
 
 After editing any file in `src/`, run `./build` to regenerate `hdi`, then commit both. CI will fail if `hdi` is out of date with `src/`.
 
+A pre-commit hook is included that automatically rebuilds `hdi` when `src/` files are staged. To enable it:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Testing
 
 Tests use [bats-core](https://github.com/bats-core/bats-core). Linting uses [ShellCheck](https://www.shellcheck.net/).

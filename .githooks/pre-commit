@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# pre-commit hook - rebuild hdi if any src/ file is staged
+
+if git diff --cached --name-only | grep -q '^src/'; then
+  ./build
+  git add hdi
+fi
