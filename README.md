@@ -50,6 +50,7 @@ hdi                    Interactive picker (default)
 hdi install            Just install/setup commands (aliases: setup, i)
 hdi run                Just run/start commands (aliases: start, r)
 hdi test               Just test commands (alias: t)
+hdi deploy             Just deploy/release commands (alias: d)
 hdi all                All sections (aliases: a)
 hdi check              Check if required tools are installed (alias: c)
 hdi /path/to/project   Scan a different directory
@@ -62,6 +63,7 @@ Short-forms:
 hdi i      Install/setup commands
 hdi r      Run/start commands
 hdi t      Test commands
+hdi d      Deploy/release commands
 hdi a      All sections
 hdi c      Check required tools
 ```

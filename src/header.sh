@@ -6,6 +6,7 @@
 #   hdi install                   Just install/setup commands
 #   hdi run                       Just run/start commands
 #   hdi test                      Just test commands
+#   hdi deploy                    Just deploy/release commands
 #   hdi all                       Show all matched sections
 #   hdi check                     Check if required tools are installed
 #   hdi [mode] --no-interactive   Print commands without the picker
@@ -21,7 +22,7 @@
 #   q / Esc      Quit
 #
 # Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t",
-#          "check" = "c"
+#          "deploy" = "d", "check" = "c"
 
 set -euo pipefail
 

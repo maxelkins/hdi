@@ -6,6 +6,7 @@
 #   hdi install                   Just install/setup commands
 #   hdi run                       Just run/start commands
 #   hdi test                      Just test commands
+#   hdi deploy                    Just deploy/release commands
 #   hdi all                       Show all matched sections
 #   hdi check                     Check if required tools are installed
 #   hdi [mode] --no-interactive   Print commands without the picker
@@ -21,7 +22,7 @@
 #   q / Esc      Quit
 #
 # Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t",
-#          "check" = "c"
+#          "deploy" = "d", "check" = "c"
 
 set -euo pipefail
 
@@ -41,6 +42,7 @@ FILE=""
 KW_INSTALL="prerequisite(s)?|require(ments)?|depend(encies)?|install(ing|ation)?|setup|set[. _-]up|getting[. _-]started|quick[. _-]start|quickstart|how[. _-]to|docker|migration|database[. _-]setup"
 KW_RUN="^usage|run(ning)?|start(ing)?|dev|develop(ment|ing)?|dev[. _-]server|launch(ing)?|command|scripts|makefile|make[. _-]targets"
 KW_TEST="test(s|ing)?"
+KW_DEPLOY="deploy(ment|ing)?|ship(ping)?|release|publish(ing)?|provision(ing)?|rollout|ci[/-]?cd|pipeline"
 KW_EXTRA="build(ing)?|compil(ation|ing)|config(uration|uring)?|environment|deploy(ment|ing)?"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
@@ -49,6 +51,7 @@ for arg in "$@"; do
     install|setup|i)        MODE="install" ;;
     run|start|r)            MODE="run" ;;
     test|t)                 MODE="test" ;;
+    deploy|d)               MODE="deploy" ;;
     all|a)                  MODE="all" ;;
     check|c)                MODE="check" ;;
     --full|-f)              FULL=true ;;
@@ -88,9 +91,10 @@ case "$MODE" in
   install)  PATTERN="($KW_INSTALL)" ;;
   run)      PATTERN="($KW_RUN)" ;;
   test)     PATTERN="($KW_TEST)" ;;
-  all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_EXTRA)" ;;
-  check)    PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_EXTRA)" ;;
-  default)  PATTERN="($KW_INSTALL|$KW_RUN)" ;;
+  deploy)   PATTERN="($KW_DEPLOY)" ;;
+  all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
+  check)    PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
+  default)  PATTERN="($KW_INSTALL|$KW_RUN|$KW_DEPLOY)" ;;
 esac
 
 
@@ -1127,6 +1131,7 @@ else
       install) printf "  %s[install]%s" "$DIM" "$RESET" ;;
       run)     printf "  %s[run]%s" "$DIM" "$RESET" ;;
       test)    printf "  %s[test]%s" "$DIM" "$RESET" ;;
+      deploy)  printf "  %s[deploy]%s" "$DIM" "$RESET" ;;
       all)     printf "  %s[all]%s" "$DIM" "$RESET" ;;
     esac
     printf "\n"
@@ -1141,7 +1146,7 @@ else
   if ! $RAW; then
     echo ""
     if ! $FULL; then
-      printf "%s  ─ add --full for prose, or: install | run | all%s\n\n" "$DIM" "$RESET"
+      printf "%s  ─ add --full for prose, or: install | run | deploy | all%s\n\n" "$DIM" "$RESET"
     fi
   fi
 fi

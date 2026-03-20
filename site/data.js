@@ -64,6 +64,7 @@ npm start
         { type: "command", text: "npm start" },
       ],
       test: [],
+      deploy: [],
       all: [
         { type: "header", text: "Prerequisites" },
         { type: "command", text: "nvm install 20" },
@@ -112,6 +113,7 @@ npm start
         { type: "command", text: "npm start" },
       ],
       test: [],
+      deploy: [],
       all: [
         { type: "header", text: "Prerequisites" },
         { type: "empty", text: "" },
@@ -202,6 +204,7 @@ MIT`,
         { type: "command", text: "flask run --debug" },
       ],
       test: [],
+      deploy: [],
       all: [
         { type: "header", text: "Getting Started" },
         { type: "empty", text: "(no commands \u2014 use --full to see prose)" },
@@ -263,6 +266,7 @@ MIT`,
         { type: "command", text: "flask run --debug" },
       ],
       test: [],
+      deploy: [],
       all: [
         { type: "header", text: "Set up a virtual environment" },
         { type: "empty", text: "" },
@@ -355,6 +359,7 @@ bundle exec rspec
         { type: "header", text: "Testing" },
         { type: "command", text: "bundle exec rspec" },
       ],
+      deploy: [],
       all: [
         { type: "header", text: "Prerequisites" },
         { type: "command", text: "brew install ruby postgresql redis" },
@@ -425,6 +430,7 @@ bundle exec rspec
         { type: "empty", text: "" },
         { type: "command", text: "bundle exec rspec" },
       ],
+      deploy: [],
       all: [
         { type: "header", text: "Prerequisites" },
         { type: "empty", text: "" },
@@ -494,6 +500,9 @@ See the [Next.js docs](https://nextjs.org/docs).`,
         { type: "header", text: "Getting Started" },
         { type: "command", text: "npm install" },
         { type: "command", text: "npm run dev" },
+        { type: "header", text: "Deploy" },
+        { type: "command", text: "npm run build" },
+        { type: "command", text: "npx vercel --prod" },
       ],
       install: [
         { type: "header", text: "Getting Started" },
@@ -506,6 +515,11 @@ See the [Next.js docs](https://nextjs.org/docs).`,
         { type: "command", text: "npm run dev" },
       ],
       test: [],
+      deploy: [
+        { type: "header", text: "Deploy" },
+        { type: "command", text: "npm run build" },
+        { type: "command", text: "npx vercel --prod" },
+      ],
       all: [
         { type: "header", text: "Getting Started" },
         { type: "command", text: "npm install" },
@@ -533,6 +547,11 @@ See the [Next.js docs](https://nextjs.org/docs).`,
         { type: "command", text: "npm run dev" },
         { type: "empty", text: "" },
         { type: "prose", text: "Open [http://localhost:3000](http://localhost:3000) with your browser." },
+        { type: "empty", text: "" },
+        { type: "header", text: "Deploy" },
+        { type: "empty", text: "" },
+        { type: "command", text: "npm run build" },
+        { type: "command", text: "npx vercel --prod" },
       ],
       install: [
         { type: "header", text: "Getting Started" },
@@ -561,6 +580,12 @@ See the [Next.js docs](https://nextjs.org/docs).`,
         { type: "prose", text: "Open [http://localhost:3000](http://localhost:3000) with your browser." },
       ],
       test: [],
+      deploy: [
+        { type: "header", text: "Deploy" },
+        { type: "empty", text: "" },
+        { type: "command", text: "npm run build" },
+        { type: "command", text: "npx vercel --prod" },
+      ],
       all: [
         { type: "header", text: "Getting Started" },
         { type: "empty", text: "" },
@@ -644,6 +669,7 @@ DB_HOST=localhost
         { type: "command", text: "./bin/service --port 8080" },
       ],
       test: [],
+      deploy: [],
       all: [
         { type: "header", text: "Requirements" },
         { type: "command", text: "brew install go" },
@@ -693,6 +719,7 @@ DB_HOST=localhost
         { type: "command", text: "./bin/service --port 8080" },
       ],
       test: [],
+      deploy: [],
       all: [
         { type: "header", text: "Requirements" },
         { type: "empty", text: "" },
@@ -727,6 +754,7 @@ Usage:
   hdi install                   Just install/setup commands
   hdi run                       Just run/start commands
   hdi test                      Just test commands
+  hdi deploy                    Just deploy/release commands
   hdi all                       Show all matched sections
   hdi check                     Check which tools are installed
   hdi [mode] --full             Include prose around commands
@@ -738,6 +766,6 @@ Interactive controls:
   c            Copy highlighted command to clipboard
   q / Esc      Quit
 
-Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t", "check" = "c"`;
+Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t", "deploy" = "d", "check" = "c"`;
 
 const VERSION = "0.14.0";

@@ -116,6 +116,41 @@ setup() {
   [[ "$output" == *"bundle exec rspec"* ]]
 }
 
+@test "'deploy' mode shows only deploy sections" {
+  run "$HDI" deploy --raw "$FIXTURES/deploy-pipeline"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"kubectl apply"* ]]
+  [[ "$output" == *"helm upgrade"* ]]
+  [[ "$output" == *"release.sh"* ]]
+  [[ "$output" != *"npm install"* ]]
+  [[ "$output" != *"npm start"* ]]
+  [[ "$output" != *"npm test"* ]]
+}
+
+@test "'d' is an alias for deploy mode" {
+  run "$HDI" d --raw "$FIXTURES/deploy-pipeline"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"kubectl apply"* ]]
+}
+
+@test "'deploy' matches CI/CD heading" {
+  run "$HDI" deploy --raw "$FIXTURES/deploy-pipeline"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"act -j deploy"* ]]
+}
+
+@test "'deploy' matches Publishing heading" {
+  run "$HDI" deploy --raw "$FIXTURES/deploy-pipeline"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npm publish"* ]]
+}
+
+@test "'deploy' matches Rollout heading" {
+  run "$HDI" deploy --raw "$FIXTURES/deploy-pipeline"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"kubectl rollout"* ]]
+}
+
 @test "'all' mode includes extra sections" {
   run "$HDI" all --raw "$FIXTURES/ruby-rails"
   [ "$status" -eq 0 ]
@@ -130,12 +165,13 @@ setup() {
   [[ "$output" == *"bundle exec rspec"* ]]
 }
 
-@test "default mode shows install + run but not extras" {
-  run "$HDI" --raw "$FIXTURES/ruby-rails"
+@test "default mode shows install + run + deploy but not test" {
+  run "$HDI" --raw "$FIXTURES/deploy-pipeline"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"bundle install"* ]]
-  [[ "$output" == *"bin/rails server"* ]]
-  [[ "$output" != *"bundle exec rspec"* ]]
+  [[ "$output" == *"npm install"* ]]
+  [[ "$output" == *"npm start"* ]]
+  [[ "$output" == *"kubectl apply"* ]]
+  [[ "$output" != *"npm test"* ]]
 }
 
 # ── Flags ───────────────────────────────────────────────────────────────────
@@ -392,16 +428,29 @@ setup() {
   [[ "$output" == *"npm run dev"* ]]
 }
 
-@test "react/nextjs: default mode excludes deploy" {
+@test "react/nextjs: default mode includes deploy" {
   run "$HDI" --raw "$FIXTURES/react-nextjs"
   [ "$status" -eq 0 ]
-  [[ "$output" != *"npx vercel"* ]]
+  [[ "$output" == *"npx vercel --prod"* ]]
 }
 
 @test "react/nextjs: all mode includes deploy" {
   run "$HDI" all --raw "$FIXTURES/react-nextjs"
   [ "$status" -eq 0 ]
   [[ "$output" == *"npx vercel --prod"* ]]
+}
+
+@test "react/nextjs: deploy mode shows deploy section" {
+  run "$HDI" deploy --raw "$FIXTURES/react-nextjs"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"npx vercel --prod"* ]]
+}
+
+@test "terraform: deploy mode shows deploy section" {
+  run "$HDI" deploy --raw "$FIXTURES/terraform"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"terraform apply"* ]]
+  [[ "$output" != *"terraform init"* ]]
 }
 
 @test "elixir/phoenix: extracts mix commands" {
@@ -986,6 +1035,12 @@ else:
 
 @test "keywords: 'Deployment' matches all mode" {
   run "$HDI" all --raw --ni "$FIXTURES/keyword-refinements"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"kubectl apply"* ]]
+}
+
+@test "keywords: 'Deployment' matches deploy mode" {
+  run "$HDI" deploy --raw --ni "$FIXTURES/keyword-refinements"
   [ "$status" -eq 0 ]
   [[ "$output" == *"kubectl apply"* ]]
 }

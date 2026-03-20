@@ -100,7 +100,7 @@
     } else {
       hintsEl.innerHTML =
         "Try: <code>hdi</code> <code>hdi install</code> <code>hdi run</code> " +
-        "<code>hdi test</code> <code>hdi all</code> <code>hdi check</code> <code>hdi --full</code> <code>hdi --raw</code>";
+        "<code>hdi test</code> <code>hdi deploy</code> <code>hdi all</code> <code>hdi check</code> <code>hdi --full</code> <code>hdi --raw</code>";
     }
   }
 
@@ -124,6 +124,7 @@
         case "install": case "setup": case "i": mode = "install"; break;
         case "run": case "start": case "r": mode = "run"; break;
         case "test": case "t": mode = "test"; break;
+        case "deploy": case "d": mode = "deploy"; break;
         case "all": case "a": mode = "all"; break;
         case "check": case "c": mode = "check"; break;
         case "--full": case "-f": full = true; break;

@@ -22,6 +22,7 @@ else
       install) printf "  %s[install]%s" "$DIM" "$RESET" ;;
       run)     printf "  %s[run]%s" "$DIM" "$RESET" ;;
       test)    printf "  %s[test]%s" "$DIM" "$RESET" ;;
+      deploy)  printf "  %s[deploy]%s" "$DIM" "$RESET" ;;
       all)     printf "  %s[all]%s" "$DIM" "$RESET" ;;
     esac
     printf "\n"
@@ -36,7 +37,7 @@ else
   if ! $RAW; then
     echo ""
     if ! $FULL; then
-      printf "%s  ─ add --full for prose, or: install | run | all%s\n\n" "$DIM" "$RESET"
+      printf "%s  ─ add --full for prose, or: install | run | deploy | all%s\n\n" "$DIM" "$RESET"
     fi
   fi
 fi

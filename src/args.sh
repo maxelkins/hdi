@@ -11,6 +11,7 @@ FILE=""
 KW_INSTALL="prerequisite(s)?|require(ments)?|depend(encies)?|install(ing|ation)?|setup|set[. _-]up|getting[. _-]started|quick[. _-]start|quickstart|how[. _-]to|docker|migration|database[. _-]setup"
 KW_RUN="^usage|run(ning)?|start(ing)?|dev|develop(ment|ing)?|dev[. _-]server|launch(ing)?|command|scripts|makefile|make[. _-]targets"
 KW_TEST="test(s|ing)?"
+KW_DEPLOY="deploy(ment|ing)?|ship(ping)?|release|publish(ing)?|provision(ing)?|rollout|ci[/-]?cd|pipeline"
 KW_EXTRA="build(ing)?|compil(ation|ing)|config(uration|uring)?|environment|deploy(ment|ing)?"
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ for arg in "$@"; do
     install|setup|i)        MODE="install" ;;
     run|start|r)            MODE="run" ;;
     test|t)                 MODE="test" ;;
+    deploy|d)               MODE="deploy" ;;
     all|a)                  MODE="all" ;;
     check|c)                MODE="check" ;;
     --full|-f)              FULL=true ;;
@@ -58,7 +60,8 @@ case "$MODE" in
   install)  PATTERN="($KW_INSTALL)" ;;
   run)      PATTERN="($KW_RUN)" ;;
   test)     PATTERN="($KW_TEST)" ;;
-  all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_EXTRA)" ;;
-  check)    PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_EXTRA)" ;;
-  default)  PATTERN="($KW_INSTALL|$KW_RUN)" ;;
+  deploy)   PATTERN="($KW_DEPLOY)" ;;
+  all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
+  check)    PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
+  default)  PATTERN="($KW_INSTALL|$KW_RUN|$KW_DEPLOY)" ;;
 esac
