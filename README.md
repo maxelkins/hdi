@@ -46,7 +46,7 @@ Make sure `~/.local/bin` is on your `$PATH`.
 ## Usage
 
 ```
-hdi                    Interactive picker (default)
+hdi                    Interactive picker — shows all sections (default)
 hdi install            Just install/setup commands (aliases: setup, i)
 hdi run                Just run/start commands (aliases: start, r)
 hdi test               Just test commands (alias: t)
@@ -56,6 +56,8 @@ hdi check              Check if required tools are installed (alias: c)
 hdi /path/to/project   Scan a different directory
 hdi /path/to/file.md   Parse a specific markdown file
 ```
+
+Running `hdi` with no subcommand currently shows all matched sections (equivalent to `hdi all`). The subcommands exist to filter down to a specific category. In future, if the default output becomes too noisy, `hdi` may return a curated subset while `hdi all` continues to show everything.
 
 Short-forms:
 

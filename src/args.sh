@@ -63,5 +63,5 @@ case "$MODE" in
   deploy)   PATTERN="($KW_DEPLOY)" ;;
   all)      PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
   check)    PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
-  default)  PATTERN="($KW_INSTALL|$KW_RUN|$KW_DEPLOY)" ;;
+  default)  PATTERN="($KW_INSTALL|$KW_RUN|$KW_TEST|$KW_DEPLOY|$KW_EXTRA)" ;;
 esac

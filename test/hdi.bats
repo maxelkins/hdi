@@ -165,13 +165,13 @@ setup() {
   [[ "$output" == *"bundle exec rspec"* ]]
 }
 
-@test "default mode shows install + run + deploy but not test" {
+@test "default mode shows install + run + test + deploy" {
   run "$HDI" --raw "$FIXTURES/deploy-pipeline"
   [ "$status" -eq 0 ]
   [[ "$output" == *"npm install"* ]]
   [[ "$output" == *"npm start"* ]]
+  [[ "$output" == *"npm test"* ]]
   [[ "$output" == *"kubectl apply"* ]]
-  [[ "$output" != *"npm test"* ]]
 }
 
 # ── Flags ───────────────────────────────────────────────────────────────────
