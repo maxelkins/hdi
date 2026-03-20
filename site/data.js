@@ -77,7 +77,7 @@ npm start
     },
     check: [
       { tool: "nvm", installed: false },
-      { tool: "npm", installed: true, version: "10.2.0" },
+      { tool: "npm", installed: true, version: "11.12.0" },
     ],
     fullProse: {
       default: [
@@ -217,9 +217,9 @@ MIT`,
       ],
     },
     check: [
-      { tool: "python3", installed: true, version: "3.11.4" },
-      { tool: "pip", installed: true, version: "23.2.1" },
-      { tool: "flask", installed: true, version: "3.0.0" },
+      { tool: "python3", installed: true, version: "3.14.3" },
+      { tool: "pip", installed: true, version: "26.0.1" },
+      { tool: "flask", installed: true, version: "3.1.3" },
     ],
     fullProse: {
       default: [
@@ -369,9 +369,9 @@ bundle exec rspec
       ],
     },
     check: [
-      { tool: "brew", installed: true, version: "4.2.0" },
-      { tool: "bundle", installed: true, version: "2.5.3" },
-      { tool: "rails", installed: true, version: "7.1.2" },
+      { tool: "brew", installed: true, version: "5.1.0" },
+      { tool: "bundler", installed: true, version: "4.0.8" },
+      { tool: "rails", installed: true, version: "8.1.2" },
       { tool: "rspec", installed: false },
     ],
     fullProse: {
@@ -516,8 +516,8 @@ See the [Next.js docs](https://nextjs.org/docs).`,
       ],
     },
     check: [
-      { tool: "npm", installed: true, version: "10.2.0" },
-      { tool: "npx", installed: true, version: "10.2.0" },
+      { tool: "npm", installed: true, version: "11.12.0" },
+      { tool: "npx", installed: true, version: "10.2.2" },
       { tool: "vercel", installed: false },
     ],
     fullProse: {
@@ -659,8 +659,8 @@ DB_HOST=localhost
       ],
     },
     check: [
-      { tool: "brew", installed: true, version: "4.2.0" },
-      { tool: "go", installed: true, version: "1.22.0" },
+      { tool: "brew", installed: true, version: "5.1.0" },
+      { tool: "go", installed: true, version: "1.26.1" },
     ],
     fullProse: {
       default: [
