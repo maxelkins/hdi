@@ -1424,7 +1424,7 @@ Usage:
   hdi [mode] --no-interactive   Print commands without the picker
   hdi [mode] --full             Include prose around commands
   hdi [mode] --raw              Plain markdown output (no colour, good for piping)
-  hdi [mode] --json             Machine-readable JSON output
+  hdi --json                     Structured JSON output (includes all sections)
   hdi [mode] /path              Scan a specific directory
   hdi [mode] /path/to/file.md   Parse a specific markdown file
 
@@ -1437,4 +1437,4 @@ Interactive controls:
 Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t",
          "deploy" = "d", "check" = "c"`;
 
-const VERSION = "0.16.0";
+const VERSION = "0.17.0";
