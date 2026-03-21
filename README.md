@@ -77,6 +77,7 @@ hdi c      Check required tools
 -v, --version                Show version
 -f, --full                   Show surrounding prose, not just commands
     --raw                    Plain markdown output (no colour, for piping)
+    --json                   Structured JSON output (includes all sections)
     --ni, --no-interactive   Non-interactive (just print, no picker)
 ```
 
@@ -155,7 +156,7 @@ Benchmarks run automatically during `./release` and are recorded in `bench/resul
 
 ## Publishing a new release
 
-The `release` script bumps the version in `src/header.sh`, rebuilds `hdi`, commits, tags and pushes. The `release` Actions workflow will automatically build and publish a GitHub release when the tag is pushed. The script then prints the `url` and `sha256` values to update in the [homebrew-tap](https://github.com/grega/homebrew-tap) repo (`Formula/hdi.rb`).
+The `release` script bumps the version in `src/header.sh`, rebuilds `hdi`, regenerates `site/data.js`, commits, tags and pushes. The `release` Actions workflow will automatically build and publish a GitHub release when the tag is pushed, and the demo site is redeployed. The script then prints the `url` and `sha256` values to update in the [homebrew-tap](https://github.com/grega/homebrew-tap) repo (`Formula/hdi.rb`).
 
 ```bash
 ./release patch          # 0.1.0 → 0.1.1

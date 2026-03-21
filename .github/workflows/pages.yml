@@ -2,8 +2,7 @@ name: Deploy demo site
 
 on:
   push:
-    branches: [main]
-    paths: [site/**]
+    tags: ['v*'] # build and deploy the demo site on every release
 
 permissions:
   pages: write

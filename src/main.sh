@@ -1,5 +1,11 @@
 
 # ── Main ─────────────────────────────────────────────────────────────────────
+
+if $JSON; then
+  render_json
+  exit 0
+fi
+
 parse_sections < "$README"
 
 if (( ${#SECTION_TITLES[@]} == 0 )); then

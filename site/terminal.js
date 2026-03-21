@@ -43,6 +43,8 @@
     appendLine("t-dim", "cd " + p.name);
     appendLine("", "");
     appendLine("t-dim", 'Type "hdi" to get started, "hdi --help" for more options, or "cat README.md" to see the full project README');
+    appendLine("t-dim", 'Use "hdi" with the "i" (install), "r" (run), "t" (test), or "d" (deploy) subcommands to see specific sections');
+    appendLine("t-dim", 'eg. "hdi r"');
     appendLine("", "");
     showPrompt();
     termEl.focus();

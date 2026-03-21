@@ -3,6 +3,7 @@
 MODE="default"
 FULL=false
 RAW=false
+JSON=false
 INTERACTIVE="auto"   # auto | yes | no
 DIR="."
 FILE=""
@@ -25,6 +26,7 @@ for arg in "$@"; do
     check|c)                MODE="check" ;;
     --full|-f)              FULL=true ;;
     --raw)                  RAW=true; INTERACTIVE="no" ;;
+    --json)                 JSON=true; INTERACTIVE="no" ;;
     --no-interactive|--ni)  INTERACTIVE="no" ;;
     --version|-v)
       echo "hdi $VERSION"

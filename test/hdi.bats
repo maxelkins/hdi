@@ -383,7 +383,7 @@ setup() {
   [[ "$output" == *"nvm install 20"* ]]
   [[ "$output" == *"npm install"* ]]
   [[ "$output" == *"cp .env.example .env"* ]]
-  [[ "$output" == *"npm start"* ]]
+  [[ "$output" == *"npm run dev"* ]]
 }
 
 @test "python/flask: extracts venv, pip, and flask commands" {
@@ -1288,4 +1288,100 @@ else:
   [[ "$output" != *" -f,"* ]]
   [[ "$output" != *" --raw"* ]]
   [[ "$output" != *" --ni,"* ]]
+}
+
+# ── JSON output ────────────────────────────────────────────────────────────
+
+@test "json: produces valid JSON" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -m json.tool > /dev/null
+}
+
+@test "json: contains modes object with all six modes" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  for mode in default install run test deploy all; do
+    echo "$output" | python3 -c "import json,sys; d=json.load(sys.stdin); assert '$mode' in d['modes'], '$mode missing from modes'"
+  done
+}
+
+@test "json: contains fullProse object with all six modes" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  for mode in default install run test deploy all; do
+    echo "$output" | python3 -c "import json,sys; d=json.load(sys.stdin); assert '$mode' in d['fullProse'], '$mode missing from fullProse'"
+  done
+}
+
+@test "json: contains check array" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -c "import json,sys; d=json.load(sys.stdin); assert isinstance(d['check'], list)"
+}
+
+@test "json: modes items have type and text fields" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for item in d['modes']['default']:
+    assert 'type' in item and 'text' in item, f'missing fields in {item}'
+"
+}
+
+@test "json: install mode only has install-related commands" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+texts = [i['text'] for i in d['modes']['install'] if i['type'] == 'command']
+assert 'npm install' in texts
+assert 'npm run dev' not in texts
+"
+}
+
+@test "json: fullProse includes prose and empty lines" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+types = {i['type'] for i in d['fullProse']['default']}
+assert 'prose' in types, 'no prose items'
+assert 'empty' in types, 'no empty items'
+assert 'command' in types, 'no command items'
+assert 'header' in types, 'no header items'
+"
+}
+
+@test "json: check items have tool and installed fields" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for item in d['check']:
+    assert 'tool' in item and 'installed' in item, f'missing fields in {item}'
+"
+}
+
+@test "json: works with direct file path" {
+  run "$HDI" --json "$FIXTURES/node-express/README.md"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -m json.tool > /dev/null
+}
+
+@test "json: skips json/yaml code blocks in modes" {
+  run "$HDI" --json "$FIXTURES/node-express"
+  [ "$status" -eq 0 ]
+  echo "$output" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+# The JSON response block should not appear as a command
+texts = [i['text'] for i in d['modes']['all'] if i['type'] == 'command']
+assert '\"status\": \"ok\",' not in texts
+"
 }

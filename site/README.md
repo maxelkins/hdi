@@ -12,6 +12,14 @@ npx http-server
 
 Then open http://localhost:8080
 
+## Regenerating data
+
+`data.js` is auto-generated from the fixture READMEs using `hdi --json`. To regenerate after changing fixtures or the parser locally, run:
+
+```bash
+generate-data.sh
+```
+
 ## Deployment
 
-Deploys to GitHub Pages automatically on push to `main` (via `.github/workflows/pages.yml`).
+Deploys to GitHub Pages automatically on release (tag push) via `.github/workflows/pages.yml`. The `release` script regenerates `data.js` before committing.
