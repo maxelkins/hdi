@@ -6,10 +6,10 @@
 Output ./demo/demo.gif
 
 Set Shell "bash"
-Set FontSize 18
-Set Width 800
-Set Height 500
-Set Padding 20
+Set FontSize 36
+Set Width 1600
+Set Height 1000
+Set Padding 40
 Set TypingSpeed 60ms
 Set Theme "Catppuccin Mocha"
 
@@ -26,7 +26,7 @@ Show
 # ── Scene 1: Main interactive picker ────────────────────────────────────────
 
 Type "hdi"
-Sleep 300ms
+Sleep 1s
 Enter
 Sleep 2.5s
 

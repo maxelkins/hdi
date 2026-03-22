@@ -23,7 +23,7 @@ See the [blog post](https://blog.gregdev.com/posts/2026-03-18-hdi-a-cli-tool-to-
 
 ## Example
 
-![Animated demo showing the tool in action](./demo/demo.gif)
+<img src="./demo/demo.gif" alt="Animated demo showing hdi in action" width="800">
 
 ## Install
 
