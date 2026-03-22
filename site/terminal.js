@@ -2,6 +2,7 @@
 
 (function () {
   var termEl = document.getElementById("terminal");
+  var hiddenInput = document.getElementById("terminal-input");
   var sidebarEl = document.getElementById("sidebar");
   var hintsEl = document.getElementById("hints");
 
@@ -10,6 +11,15 @@
   var inputBuffer = "";
   var promptActive = false;
   var autoPlayed = false;
+
+  function focusTerminal() {
+    hiddenInput.focus();
+  }
+
+  function clearTerminal() {
+    clearTerminal();
+    termEl.appendChild(hiddenInput);
+  }
 
   // ── Sidebar ──────────────────────────────────────────────────────────────
 
@@ -43,7 +53,7 @@
     }
     currentProject = p;
     buildSidebar();
-    termEl.innerHTML = "";
+    clearTerminal();
     appendLine("t-dim", "cd " + p.name);
     appendLine("", "");
     appendLine("t-dim", 'Type "hdi" to get started, "hdi --help" for more options, or "cat README.md" to see the full project README');
@@ -51,7 +61,7 @@
     appendLine("t-dim", 'eg. "hdi r"');
     appendLine("", "");
     showPrompt();
-    termEl.focus();
+    focusTerminal();
   }
 
   // ── Terminal output ──────────────────────────────────────────────────────
@@ -114,7 +124,7 @@
         if (!promptActive) return;
         inputBuffer = el.textContent;
         updatePromptDisplay();
-        termEl.focus();
+        focusTerminal();
       });
     });
   }
@@ -172,7 +182,7 @@
     var parsed = parseCommand(input);
 
     if (parsed.clear) {
-      termEl.innerHTML = "";
+      clearTerminal();
       showPrompt();
       return;
     }
@@ -369,15 +379,30 @@
     } else if (e.key === "l" && e.ctrlKey) {
       // Ctrl+L to clear
       e.preventDefault();
-      termEl.innerHTML = "";
+      clearTerminal();
       showPrompt();
     }
   }
 
   termEl.addEventListener("keydown", onKeyDown);
+  hiddenInput.addEventListener("keydown", onKeyDown);
 
-  // Handle paste into prompt
-  termEl.addEventListener("paste", function (e) {
+  // Handle mobile keyboard input via the hidden input element.
+  // iOS Safari only shows the on-screen keyboard for real input elements,
+  // so we focus a hidden <input> and proxy its value into inputBuffer.
+  hiddenInput.addEventListener("input", function () {
+    if (!promptActive) return;
+    if (currentPicker && currentPicker.isActive()) return;
+    var val = hiddenInput.value;
+    if (val) {
+      inputBuffer += val;
+      hiddenInput.value = "";
+      updatePromptDisplay();
+    }
+  });
+
+  // Handle paste on both the terminal div and hidden input
+  function onPaste(e) {
     if (!promptActive) return;
     if (currentPicker && currentPicker.isActive()) return;
     e.preventDefault();
@@ -388,11 +413,13 @@
       inputBuffer += firstLine;
       updatePromptDisplay();
     }
-  });
+  }
+  termEl.addEventListener("paste", onPaste);
+  hiddenInput.addEventListener("paste", onPaste);
 
   termEl.addEventListener("click", function () {
     if (!currentPicker || !currentPicker.isActive()) {
-      termEl.focus();
+      focusTerminal();
     }
   });
 
