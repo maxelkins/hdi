@@ -176,6 +176,15 @@ body {
   border: 0.0625rem solid var(--surface0);
 }
 
+.demo-link {
+  margin-top: 0.75rem;
+  text-align: left;
+}
+
+.demo-link a {
+  color: var(--cyan);
+}
+
 /* Install */
 .install-section h2,
 .usage-section h2 {
@@ -481,10 +490,6 @@ body {
 }
 
 /* Picker */
-.picker-wrap {
-  /* container for the picker lines */
-}
-
 .picker-row {
   white-space: pre;
   min-height: 1.6em;
