@@ -21,6 +21,7 @@ function Picker(items, projectName, modeLabel, terminal) {
 
   var cursor = 0;
   var flashMsg = "";
+  var flashClass = "";
   var flashTimer = null;
   var copied = false;
   var copiedTimer = null;
@@ -71,7 +72,7 @@ function Picker(items, projectName, modeLabel, terminal) {
     var footer = document.createElement("div");
     footer.className = "picker-footer";
     if (flashMsg) {
-      footer.innerHTML = "\n  " + '<span class="flash-msg">' + esc(flashMsg) + '</span>';
+      footer.innerHTML = "\n  " + '<span class="flash-msg' + (flashClass ? " " + flashClass : "") + '">' + esc(flashMsg) + '</span>';
     } else {
       footer.innerHTML = "\n  \u2191\u2193 navigate  \u21e5 sections  \u23ce execute  c copy  q quit";
     }
@@ -101,12 +102,14 @@ function Picker(items, projectName, modeLabel, terminal) {
     }
   }
 
-  function flash(msg, duration) {
+  function flash(msg, duration, cls) {
     flashMsg = msg;
+    flashClass = cls || "";
     render();
     if (flashTimer) clearTimeout(flashTimer);
     flashTimer = setTimeout(function () {
       flashMsg = "";
+      flashClass = "";
       render();
     }, duration || 1500);
   }
@@ -137,7 +140,7 @@ function Picker(items, projectName, modeLabel, terminal) {
   function executeCmd() {
     if (cmdIndices.length === 0) return;
     var cmd = items[cmdIndices[cursor]].text;
-    flash("$ " + cmd + " \u2014 would execute in a real terminal", 2500);
+    flash("$ " + cmd + " \u2014 would execute in a real terminal", 2500, "flash-execute");
   }
 
   function handleKey(e) {

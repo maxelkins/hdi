@@ -46,15 +46,9 @@
     });
   }
 
-  function selectProject(p) {
-    if (currentPicker) {
-      currentPicker.destroy();
-      currentPicker = null;
-    }
-    currentProject = p;
-    buildSidebar();
+  function resetTerminal() {
     clearTerminal();
-    appendLine("t-dim", "cd " + p.name);
+    appendLine("t-dim", "cd " + currentProject.name);
     appendLine("", "");
     appendLine("t-dim", 'Type "hdi" to get started, "hdi --help" for more options, or "cat README.md" to see the full project README');
     appendLine("t-dim", 'Use "hdi" with the "i" (install), "r" (run), "t" (test), or "d" (deploy) subcommands to see specific sections');
@@ -62,6 +56,16 @@
     appendLine("", "");
     showPrompt();
     focusTerminal();
+  }
+
+  function selectProject(p) {
+    if (currentPicker) {
+      currentPicker.destroy();
+      currentPicker = null;
+    }
+    currentProject = p;
+    buildSidebar();
+    resetTerminal();
   }
 
   // ── Terminal output ──────────────────────────────────────────────────────
@@ -178,8 +182,7 @@
     var parsed = parseCommand(input);
 
     if (parsed.clear) {
-      clearTerminal();
-      showPrompt();
+      resetTerminal();
       return;
     }
 
@@ -372,6 +375,8 @@
       e.preventDefault();
       inputBuffer += e.key;
       updatePromptDisplay();
+    } else if (e.key === "Tab") {
+      e.preventDefault();
     } else if (e.key === "l" && e.ctrlKey) {
       // Ctrl+L to clear
       e.preventDefault();

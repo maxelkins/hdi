@@ -511,6 +511,11 @@ body {
   font-weight: 600;
 }
 
+.flash-msg.flash-execute {
+  color: var(--yellow);
+  font-style: italic;
+}
+
 /* Hints bar */
 .hints {
   padding: 0.75rem 1.25rem;
