@@ -33,6 +33,13 @@ See the [blog post](https://blog.gregdev.com/posts/2026-03-18-hdi-a-cli-tool-to-
 brew install grega/tap/hdi
 ```
 
+#### Update
+
+```bash
+brew update
+brew upgrade hdi
+```
+
 ### Manual
 
 ```bash
