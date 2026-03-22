@@ -146,6 +146,9 @@ function Picker(items, projectName, modeLabel, terminal) {
   function handleKey(e) {
     if (!active) return;
 
+    var demoView = document.getElementById("demo-view");
+    if (!demoView || demoView.classList.contains("hidden")) return;
+
     var key = e.key;
     if (key === "ArrowUp" || key === "k") {
       e.preventDefault();
