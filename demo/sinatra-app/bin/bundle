@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# Stub for demo recording — mimics `bundle install` output
+# Stub for demo recording
+if [[ "$1" == "--version" ]]; then
+  echo "Bundler version 4.0.8"
+  exit 0
+fi
+# Mimics `bundle install` output
 echo "Fetching gem metadata from https://rubygems.org/..."
 echo "Resolving dependencies..."
 echo "Using rack 3.2.5"

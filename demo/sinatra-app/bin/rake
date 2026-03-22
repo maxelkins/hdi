@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+echo "rake, version 13.3.1"
