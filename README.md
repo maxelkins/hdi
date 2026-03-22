@@ -16,7 +16,7 @@ $ hdi
  ▸ Run
     npm run dev
 
-  ↑↓ navigate  ⏎ execute  c copy  q quit
+  ↑↓ navigate  ⇥ sections  ⏎ execute  c copy  q quit
 ```
 
 See the [blog post](https://blog.gregdev.com/posts/2026-03-18-hdi-a-cli-tool-to-extract-run-commands-from-project-readmes/) for more background information, and the [website](https://hdi.gregdev.com/#demo) for an interactive demo.

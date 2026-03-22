@@ -1,6 +1,7 @@
 # VHS demo tape for hdi
 # Run: vhs demo.tape
 # Requires: brew install vhs
+# Uses the `../hdi` build through $PWD below (ie. not `hdi` installed via Homebrew) so that the demo always shows the latest version of hdi
 
 Output ./demo/demo.gif
 
@@ -15,7 +16,7 @@ Set Theme "Catppuccin Mocha"
 # ── Setup (hidden) ──────────────────────────────────────────────────────────
 
 Hide
-Type "export PATH=$PWD/demo/sinatra-app/bin:$PATH" Enter
+Type "export PATH=$PWD:$PWD/demo/sinatra-app/bin:$PATH" Enter
 Type "clear" Enter
 Sleep 300ms
 Type "cd demo/sinatra-app" Enter
@@ -88,4 +89,14 @@ Enter
 Sleep 2s
 
 Type "q"
-Sleep 2s
+Sleep 1.5s
+
+# ── Scene 5: Check mode ─────────────────────────────────────────────────────
+
+Type "hdi c"
+Sleep 200ms
+Enter
+Sleep 3s
+
+Type "q"
+Sleep 1.5s
