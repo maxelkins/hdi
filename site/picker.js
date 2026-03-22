@@ -7,6 +7,18 @@ function Picker(items, projectName, modeLabel, terminal) {
     if (items[i].type === "command") cmdIndices.push(i);
   }
 
+  var sectionFirstCmd = [];
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type === "header") {
+      for (var j = i + 1; j < items.length; j++) {
+        if (items[j].type === "command") {
+          sectionFirstCmd.push(cmdIndices.indexOf(j));
+          break;
+        }
+      }
+    }
+  }
+
   var cursor = 0;
   var flashMsg = "";
   var flashTimer = null;
@@ -61,7 +73,7 @@ function Picker(items, projectName, modeLabel, terminal) {
     if (flashMsg) {
       footer.innerHTML = "\n  " + '<span class="flash-msg">' + esc(flashMsg) + '</span>';
     } else {
-      footer.innerHTML = "\n  \u2191\u2193 navigate  \u23ce execute  c copy  q quit";
+      footer.innerHTML = "\n  \u2191\u2193 navigate  \u21e5 sections  \u23ce execute  c copy  q quit";
     }
     wrap.appendChild(footer);
   }
@@ -72,6 +84,20 @@ function Picker(items, projectName, modeLabel, terminal) {
       cursor = next;
       copied = false;
       render();
+    }
+  }
+
+  function moveSection(delta) {
+    if (sectionFirstCmd.length === 0) return;
+    var i;
+    if (delta > 0) {
+      for (i = 0; i < sectionFirstCmd.length; i++) {
+        if (sectionFirstCmd[i] > cursor) { cursor = sectionFirstCmd[i]; copied = false; render(); return; }
+      }
+    } else {
+      for (i = sectionFirstCmd.length - 1; i >= 0; i--) {
+        if (sectionFirstCmd[i] < cursor) { cursor = sectionFirstCmd[i]; copied = false; render(); return; }
+      }
     }
   }
 
@@ -130,6 +156,15 @@ function Picker(items, projectName, modeLabel, terminal) {
     } else if (key === "Enter") {
       e.preventDefault();
       executeCmd();
+    } else if (key === "Tab") {
+      e.preventDefault();
+      moveSection(e.shiftKey ? -1 : 1);
+    } else if (key === "ArrowRight") {
+      e.preventDefault();
+      moveSection(1);
+    } else if (key === "ArrowLeft") {
+      e.preventDefault();
+      moveSection(-1);
     } else if (key === "q" || key === "Escape") {
       e.preventDefault();
       destroy();

@@ -88,7 +88,7 @@
     line.innerHTML = '$ <span class="t-input" id="prompt-input"></span><span class="t-cursor"></span>';
     termEl.appendChild(line);
     scrollToBottom();
-    setHints("default");
+    setHints();
   }
 
   function updatePromptDisplay() {
@@ -110,14 +110,10 @@
 
   // ── Hints ────────────────────────────────────────────────────────────────
 
-  function setHints(mode) {
-    if (mode === "picker") {
-      hintsEl.innerHTML = "\u2191\u2193 navigate  \u23ce execute  <code>c</code> copy  <code>q</code> quit";
-    } else {
-      hintsEl.innerHTML =
-        "Try: <code>hdi</code> <code>hdi install</code> <code>hdi run</code> " +
-        "<code>hdi test</code> <code>hdi deploy</code> <code>hdi all</code> <code>hdi check</code> <code>hdi --full</code> <code>hdi --raw</code>";
-    }
+  function setHints() {
+    hintsEl.innerHTML =
+      "Try: <code>hdi</code> <code>hdi install</code> <code>hdi run</code> " +
+      "<code>hdi test</code> <code>hdi deploy</code> <code>hdi all</code> <code>hdi check</code> <code>hdi --full</code> <code>hdi --raw</code>";
     hintsEl.querySelectorAll("code").forEach(function (el) {
       el.style.cursor = "pointer";
       el.addEventListener("click", function () {
@@ -246,11 +242,11 @@
       return;
     }
 
-    setHints("picker");
+    setHints();
     currentPicker = Picker(items, currentProject.name, modeLabel(parsed.mode), {
       showPrompt: function () {
         currentPicker = null;
-        setHints("default");
+        setHints();
         showPrompt();
       },
     });
