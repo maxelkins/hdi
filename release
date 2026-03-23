@@ -84,7 +84,7 @@ git commit -m "Bump version to $new"
 git tag "$tag"
 git push origin HEAD --tags
 
-# ── Print sha256 for Homebrew tap ───────────────────────────────────────────
+# ── Print info needed for Homebrew tap ───────────────────────────────────────────
 
 echo ""
 echo "Waiting for release tarball to be available..."
@@ -96,9 +96,11 @@ for i in $(seq 1 30); do
     sha=$(shasum -a 256 /tmp/hdi-release.tar.gz | awk '{print $1}')
     rm -f /tmp/hdi-release.tar.gz
     echo ""
-    echo "Update homebrew-tap Formula/hdi.rb:"
-    echo "  url  \"$tarball_url\""
-    echo "  sha256 \"$sha\""
+    echo "Update homebrew-tap Formula/hdi.rb with..."
+    echo "url":
+    echo $tarball_url
+    echo "sha256":
+    echo $sha
     exit 0
   fi
   printf "."
