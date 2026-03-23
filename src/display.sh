@@ -1,4 +1,3 @@
-
 # ── Build a flat list: section headers + commands ────────────────────────────
 # Each entry is either a "header", "subheader", "command", or "empty".
 # We store parallel arrays for the display lines, their types, and

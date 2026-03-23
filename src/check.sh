@@ -1,4 +1,3 @@
-
 # ── Check mode: report which tools are installed ─────────────────────────────
 
 # Shell builtins and coreutils that are always available - not worth checking

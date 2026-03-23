@@ -1,4 +1,3 @@
-
 # ── Extract fenced code blocks, skipping non-command languages ───────────────
 SKIP_LANGS="json|yaml|yml|toml|xml|csv|sql|html|css|text|plaintext|txt|output|log|env"
 SKIP_LANGS+="|ini|conf|properties|graphql|gql|proto|protobuf|hcl"

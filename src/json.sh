@@ -1,4 +1,3 @@
-
 # ── JSON output ───────────────────────────────────────────────────────────────
 
 # Escape a string for safe embedding in JSON.

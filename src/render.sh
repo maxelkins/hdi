@@ -1,4 +1,3 @@
-
 # ── Non-interactive render ──────────────────────────────────
 render_static() {
   for idx in "${!DISPLAY_LINES[@]}"; do

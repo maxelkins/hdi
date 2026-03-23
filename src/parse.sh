@@ -1,4 +1,3 @@
-
 # ── Extract matching sections ────────────────────────────────────────────────
 declare -a SECTION_TITLES=()
 declare -a SECTION_BODIES=()

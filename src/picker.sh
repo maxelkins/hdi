@@ -1,4 +1,3 @@
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # ── Interactive picker (inline mode) ─────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -8,7 +7,7 @@
 # clears the picker area entirely so the terminal is left clean.
 
 PICKER_LINES=0  # tracks how many lines the last draw_picker call printed
-FLASH_MSG=""     # one-shot message shown in footer, cleared on next draw
+FLASH_MSG=""    # one-shot message shown in footer, cleared on next draw
 
 draw_picker() {
   local selected="$1"
