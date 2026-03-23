@@ -1183,6 +1183,16 @@ else:
   [[ "$output" == *"# This is a comment, not a heading"* ]]
 }
 
+@test "code-fence: --full survives prose line directly before opening fence" {
+  # Regression: prose immediately before ``` (no blank line) caused
+  # _rf_render_line to clobber BASH_REMATCH → "unbound variable" error
+  run "$HDI" --raw --full "$FIXTURES/prose-before-fence"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pip install -r requirements.txt"* ]]
+  [[ "$output" == *"python server.py"* ]]
+  [[ "$output" == *"curl http://localhost:8080/health"* ]]
+}
+
 # ── Nested section body preservation ─────────────────────────────────────────
 
 @test "nested-match: parent section body is preserved when child heading matches" {

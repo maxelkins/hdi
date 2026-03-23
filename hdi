@@ -739,12 +739,12 @@ render_full() {
     while IFS= read -r line; do
       # Handle fenced code blocks (pass-through, no lookahead needed)
       if [[ "$line" =~ ^[[:space:]]*(\`{3,}|~{3,}) ]]; then
+        local rf_matched="${BASH_REMATCH[1]}"
         # Flush buffered prev line before handling fence
         if $rf_have_prev && ! $in_code; then
           _rf_render_line "$rf_prev"
           rf_have_prev=false; rf_prev=""
         fi
-        local rf_matched="${BASH_REMATCH[1]}"
         if $in_code; then
           if [[ "${rf_matched:0:1}" == "$rf_fence_char" ]]; then
             printf "%s%s%s\n" "$CODE_BG$GREEN" "$code_buf" "$RESET"
