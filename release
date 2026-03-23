@@ -87,20 +87,22 @@ git push origin HEAD --tags
 # ── Print sha256 for Homebrew tap ───────────────────────────────────────────
 
 echo ""
-echo "Waiting for tarball to be available..."
-tarball_url="https://github.com/grega/hdi/archive/refs/tags/$tag.tar.gz"
+echo "Waiting for release tarball to be available..."
+tarball_url="https://github.com/grega/hdi/releases/download/$tag/hdi-$tag.tar.gz"
 
-# Retry a few times - GitHub may take a moment after the push
-for i in 1 2 3 4 5; do
-  sha=$(curl -sfL "$tarball_url" | shasum -a 256 | awk '{print $1}')
-  if [[ -n "$sha" ]]; then
+# Retry until the release workflow finishes and the asset is available
+for i in $(seq 1 30); do
+  if curl -sfL "$tarball_url" -o /tmp/hdi-release.tar.gz 2>/dev/null; then
+    sha=$(shasum -a 256 /tmp/hdi-release.tar.gz | awk '{print $1}')
+    rm -f /tmp/hdi-release.tar.gz
     echo ""
     echo "Update homebrew-tap Formula/hdi.rb:"
     echo "  url  \"$tarball_url\""
     echo "  sha256 \"$sha\""
     exit 0
   fi
-  sleep 2
+  printf "."
+  sleep 10
 done
 
 echo "Warning: could not fetch tarball - check $tarball_url manually" >&2
