@@ -144,7 +144,7 @@ MIT`,
     check: [
       { tool: "nvm", installed: false },
       { tool: "npm", installed: true, version: "11.11.0" },
-      { tool: "npx", installed: true, version: "11.9.0" },
+      { tool: "npx", installed: true, version: "10.9.4" },
       { tool: "docker", installed: true, version: "29.1.3" },
     ],
     fullProse: {
@@ -1105,7 +1105,7 @@ See the [Next.js docs](https://nextjs.org/docs).`,
     },
     check: [
       { tool: "npm", installed: true, version: "11.11.0" },
-      { tool: "npx", installed: true, version: "11.9.0" },
+      { tool: "npx", installed: true, version: "10.9.4" },
     ],
     fullProse: {
       default: [
@@ -1597,13 +1597,13 @@ Usage:
   hdi [mode] /path/to/file.md   Parse a specific markdown file
 
 Interactive controls:
-  ↑/↓  k/j     Navigate commands
-  Tab/S-Tab    Jump between sections
-  Enter        Execute the highlighted command
-  c            Copy highlighted command to clipboard
-  q / Esc      Quit
+  ↑/↓  k/j           Navigate commands
+  Tab/S-Tab          Jump between sections
+  Enter              Execute the highlighted command
+  c                  Copy highlighted command to clipboard
+  q / Esc / Ctrl+C   Quit
 
 Aliases: "install" = "setup" = "i", "run" = "start" = "r", "test" = "t",
          "deploy" = "d", "check" = "c"`;
 
-const VERSION = "0.19.1";
+const VERSION = "0.20.0";
