@@ -1,0 +1,11 @@
+# Ignore artifacts:
+build
+coverage
+release
+
+# Generated benchmark files
+bench/results.csv
+bench/results.svg
+
+# Generated test files  
+site/playwright-temp/
