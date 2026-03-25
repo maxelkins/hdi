@@ -131,16 +131,9 @@ button,
   }
 }
 
-/* ── Header ─────────────────────────────────────────────────────────── */
+/* ── Nav ─────────────────────────────────────────────────────────── */
 
-.nav-back {
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  min-block-size: 44px;
-}
-
-.header {
+.nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -150,56 +143,11 @@ button,
   flex-shrink: 0;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.logo {
-  font-weight: 700;
-  font-size: 1.125rem;
-  color: var(--yellow);
-}
-
-.logo a {
-  color: inherit;
+.nav-back {
   text-decoration: none;
-}
-
-.tabs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.tab {
-  background: none;
-  border: none;
-  color: var(--overlay0);
-  font-family: var(--font-mono);
-  font-size: 0.9375rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    color 0.12s;
-}
-
-.tab:hover {
-  background: var(--surface0);
-  color: var(--text);
-}
-
-.tab.active {
-  background: var(--surface0);
-  color: var(--text);
-}
-
-.header-right {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
+  min-block-size: 44px;
 }
 
 /* ── Github link ─────────────────────────────────────────────────────────── */
