@@ -80,6 +80,25 @@ for readme in "$SCRIPT_DIR"/small.md "$SCRIPT_DIR"/medium.md "$SCRIPT_DIR"/large
   medians+=("$med")
 done
 
+# ── Picker benchmark (time to first frame) ──────────────────────────────────
+
+declare -a picker_medians=()
+
+for readme in "$SCRIPT_DIR"/small.md "$SCRIPT_DIR"/medium.md "$SCRIPT_DIR"/large.md "$SCRIPT_DIR"/stress.md; do
+  [[ -f "$readme" ]] || continue
+
+  # Warm-up run
+  _HDI_BENCH_PICKER=1 LINES=24 "$HDI" all "$readme" >/dev/null 2>&1 || true
+
+  timings=""
+  for (( i=0; i<RUNS; i++ )); do
+    ms=$(time_ms env _HDI_BENCH_PICKER=1 LINES=24 "$HDI" all "$readme")
+    timings+="$ms"$'\n'
+  done
+
+  picker_medians+=("$(echo "$timings" | grep -v '^$' | median)")
+done
+
 # ── Parse flags ──────────────────────────────────────────────────────────────
 
 DO_LOG=false
@@ -97,36 +116,59 @@ printf "\n"
 printf "  hdi %s on %s\n" "$version" "$machine"
 printf "  %s - %d runs per fixture\n\n" "$timestamp" "$RUNS"
 
+prev_version=""
 if $DO_COMPARE && [[ -f "$LOG" ]]; then
-  # Find the latest logged version
   prev_version=$(awk -F, 'NR>1 {print $2}' "$LOG" | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+fi
 
-  if [[ -n "$prev_version" ]]; then
-    printf "  %-12s %6s %10s %10s %8s\n" "Fixture" "Lines" "Current" "v$prev_version" "Δ"
-    printf "  ────────────────────────────────────────────────────\n"
-    for i in "${!names[@]}"; do
-      fixture="${names[$i]}"
-      cur="${medians[$i]}"
-      prev=$(awk -F, -v ver="$prev_version" -v fix="$fixture" '$2==ver && $4==fix {print $6}' "$LOG")
-      if [[ -n "$prev" ]]; then
-        delta=$(/usr/bin/perl -e "printf '%+.1f%%', (($cur - $prev) / $prev) * 100")
-        printf "  %-12s %6s %8sms %8sms %8s\n" "$fixture" "${lines[$i]}" "$cur" "$prev" "$delta"
-      else
-        printf "  %-12s %6s %8sms %8s- %8s\n" "$fixture" "${lines[$i]}" "$cur" "" "-"
-      fi
-    done
-  else
-    printf "  %-12s %6s %9s\n" "Fixture" "Lines" "Median"
-    printf "  ──────────────────────────────\n"
-    for i in "${!names[@]}"; do
-      printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${medians[$i]}"
-    done
-  fi
+# ── Non-interactive results ──
+
+printf "  ── non-interactive (hdi all --ni) ──\n\n"
+
+if $DO_COMPARE && [[ -f "$LOG" ]] && [[ -n "$prev_version" ]]; then
+  printf "  %-12s %6s %10s %10s %8s\n" "Fixture" "Lines" "Current" "v$prev_version" "Δ"
+  printf "  ────────────────────────────────────────────────────\n"
+  for i in "${!names[@]}"; do
+    cur="${medians[$i]}"
+    prev=$(awk -F, -v ver="$prev_version" -v fix="${names[$i]}" '$2==ver && $4==fix {print $6}' "$LOG")
+    if [[ -n "$prev" ]]; then
+      delta=$(/usr/bin/perl -e "printf '%+.1f%%', (($cur - $prev) / $prev) * 100")
+      printf "  %-12s %6s %8sms %8sms %8s\n" "${names[$i]}" "${lines[$i]}" "$cur" "$prev" "$delta"
+    else
+      printf "  %-12s %6s %8sms %8s- %8s\n" "${names[$i]}" "${lines[$i]}" "$cur" "" "-"
+    fi
+  done
 else
   printf "  %-12s %6s %9s\n" "Fixture" "Lines" "Median"
   printf "  ──────────────────────────────\n"
   for i in "${!names[@]}"; do
     printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${medians[$i]}"
+  done
+fi
+printf "\n"
+
+# ── Picker results ──
+
+printf "  ── picker (time to first frame) ──\n\n"
+
+if $DO_COMPARE && [[ -f "$LOG" ]] && [[ -n "$prev_version" ]]; then
+  printf "  %-12s %6s %10s %10s %8s\n" "Fixture" "Lines" "Current" "v$prev_version" "Δ"
+  printf "  ────────────────────────────────────────────────────\n"
+  for i in "${!names[@]}"; do
+    cur="${picker_medians[$i]}"
+    prev=$(awk -F, -v ver="$prev_version" -v fix="${names[$i]}_picker" '$2==ver && $4==fix {print $6}' "$LOG")
+    if [[ -n "$prev" ]]; then
+      delta=$(/usr/bin/perl -e "printf '%+.1f%%', (($cur - $prev) / $prev) * 100")
+      printf "  %-12s %6s %8sms %8sms %8s\n" "${names[$i]}" "${lines[$i]}" "$cur" "$prev" "$delta"
+    else
+      printf "  %-12s %6s %8sms %8s- %8s\n" "${names[$i]}" "${lines[$i]}" "$cur" "" "-"
+    fi
+  done
+else
+  printf "  %-12s %6s %9s\n" "Fixture" "Lines" "Median"
+  printf "  ──────────────────────────────\n"
+  for i in "${!names[@]}"; do
+    printf "  %-12s %6s %7sms\n" "${names[$i]}" "${lines[$i]}" "${picker_medians[$i]}"
   done
 fi
 printf "\n"
@@ -149,6 +191,7 @@ mv "$tmpfile" "$LOG"
 # Append new rows
 for i in "${!names[@]}"; do
   echo "$timestamp,$version,$machine,${names[$i]},${lines[$i]},${medians[$i]}" >> "$LOG"
+  echo "$timestamp,$version,$machine,${names[$i]}_picker,${lines[$i]},${picker_medians[$i]}" >> "$LOG"
 done
 
 printf "  Logged to bench/results.csv\n\n"

@@ -58,6 +58,9 @@ if [[ "$INTERACTIVE" == "auto" ]]; then
   fi
 fi
 
+# Benchmark mode: force interactive for picker timing
+[[ "${_HDI_BENCH_PICKER:-}" == "1" ]] && INTERACTIVE="yes"
+
 # Build the keyword pattern for the chosen mode
 case "$MODE" in
   install)  PATTERN="($KW_INSTALL)" ;;

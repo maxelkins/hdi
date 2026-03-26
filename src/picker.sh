@@ -272,6 +272,14 @@ run_interactive() {
   local cursor=0
   local selected="${CMD_INDICES[$cursor]}"
 
+  # Benchmark mode: draw one frame without TTY, then exit
+  if [[ "${_HDI_BENCH_PICKER:-}" == "1" ]]; then
+    _term_height() { echo "${LINES:-24}"; }
+    adjust_viewport "$selected"
+    draw_picker "$selected"
+    return 0
+  fi
+
   # Save terminal state (global so cleanup trap can access after function returns)
   SAVED_TTY=$(stty -g)
 

@@ -20,9 +20,8 @@ fi
 awk -F, '
 BEGIN {
   # Layout
-  W = 1080; H = 840
-  ML = 72; MR = 110; MT = 44; MB = 50   # margins
-  PW = W - ML - MR; PH = H - MT - MB    # plot area
+  W = 1080; ML = 72; MR = 110
+  PW = W - ML - MR
 
   # Fixture draw order and colours
   split("small,medium,large,stress", fix_order, ",")
@@ -31,7 +30,7 @@ BEGIN {
   color["large"]  = "#ea580c"
   color["stress"] = "#dc2626"
 
-  nv = 0; max_ms = 0
+  nv = 0; max_ni = 0; max_picker = 0; has_picker = 0
 }
 
 NR == 1 { next }   # skip header
@@ -42,16 +41,29 @@ NR == 1 { next }   # skip header
   # Track unique versions in order
   if (!(v in v_seen)) { v_seen[v] = 1; versions[nv++] = v }
 
-  data[fixture, v] = ms
-  if (ms > max_ms) max_ms = ms
+  if (fixture ~ /_picker$/) {
+    base = fixture; sub(/_picker$/, "", base)
+    pdata[base, v] = ms
+    if (ms > max_picker) max_picker = ms
+    has_picker = 1
+  } else {
+    data[fixture, v] = ms
+    if (ms > max_ni) max_ni = ms
+  }
 }
 
 END {
-  # Linear scale: pick a clean step so we get ~8-12 grid lines
-  ceil = max_ms * 1.1
-  step = 50
-  ceil = int((ceil + step - 1) / step) * step
-  nsteps = int(ceil / step)
+  # Determine layout based on whether picker data exists
+  if (has_picker) {
+    PH  = 300
+    MT1 = 44          # chart 1 plot top
+    MT2 = 450         # chart 2 plot top
+    H   = 810         # total SVG height
+  } else {
+    PH  = 746
+    MT1 = 44
+    H   = 840
+  }
 
   # ── SVG header ──────────────────────────────────────────────────────────
   print "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -61,14 +73,23 @@ END {
   # Background
   printf "<rect width=\"%d\" height=\"%d\" fill=\"#fff\" rx=\"6\"/>\n", W, H
 
+  # ── Chart 1: non-interactive ───────────────────────────────────────────
+
   # Title
-  printf "<text x=\"%d\" y=\"24\" font-size=\"15\" font-weight=\"600\" ", ML
+  printf "<text x=\"%d\" y=\"%d\" font-size=\"15\" font-weight=\"600\" ", ML, MT1 - 16
   printf "fill=\"#1e293b\">hdi benchmark - median parse time</text>\n"
 
-  # ── Y axis grid + labels ────────────────────────────────────────────────
-  for (i = 0; i <= nsteps; i++) {
-    val = step * i
-    y = MT + PH - (val / ceil) * PH
+  # Y scale
+  ceil1 = max_ni * 1.1
+  step1 = 50
+  ceil1 = int((ceil1 + step1 - 1) / step1) * step1
+  if (ceil1 == 0) ceil1 = 50
+  nsteps1 = int(ceil1 / step1)
+
+  # Y axis grid + labels
+  for (i = 0; i <= nsteps1; i++) {
+    val = step1 * i
+    y = MT1 + PH - (val / ceil1) * PH
     printf "<line x1=\"%d\" y1=\"%.1f\" x2=\"%d\" y2=\"%.1f\" ", ML, y, ML + PW, y
     printf "stroke=\"#e2e8f0\" stroke-width=\"1\"/>\n"
     printf "<text x=\"%d\" y=\"%.1f\" text-anchor=\"end\" ", ML - 8, y + 4
@@ -76,56 +97,139 @@ END {
   }
 
   # Y axis title
-  printf "<text x=\"14\" y=\"%d\" font-size=\"11\" fill=\"#64748b\" ", MT + PH/2
-  printf "transform=\"rotate(-90,14,%d)\">ms</text>\n", MT + PH/2
+  printf "<text x=\"14\" y=\"%d\" font-size=\"11\" fill=\"#64748b\" ", MT1 + PH/2
+  printf "transform=\"rotate(-90,14,%d)\">ms</text>\n", MT1 + PH/2
 
-  # ── X axis labels ───────────────────────────────────────────────────────
+  # X axis labels
   for (i = 0; i < nv; i++) {
     x = ML + (nv > 1 ? (i / (nv - 1)) * PW : PW / 2)
-    y = MT + PH + 20
+    y = MT1 + PH + 20
     printf "<text x=\"%.1f\" y=\"%d\" text-anchor=\"middle\" ", x, y
     printf "font-size=\"11\" fill=\"#64748b\">%s</text>\n", versions[i]
   }
 
   # X axis title
-  printf "<text x=\"%d\" y=\"%d\" text-anchor=\"middle\" ", ML + PW/2, MT + PH + 40
+  printf "<text x=\"%d\" y=\"%d\" text-anchor=\"middle\" ", ML + PW/2, MT1 + PH + 40
   printf "font-size=\"11\" fill=\"#64748b\">release</text>\n"
 
-  # ── Data lines ──────────────────────────────────────────────────────────
+  # Data lines (skip versions without data)
   for (f = 1; f <= 4; f++) {
     fix = fix_order[f]
     c = color[fix]
 
-    # Polyline path
-    printf "<polyline fill=\"none\" stroke=\"%s\" stroke-width=\"2\" ", c
-    printf "stroke-linejoin=\"round\" points=\""
+    # Collect valid points
+    np = 0
     for (i = 0; i < nv; i++) {
       ms = data[fix, versions[i]] + 0
-      x = ML + (nv > 1 ? (i / (nv - 1)) * PW : PW / 2)
-      y = MT + PH - (ms / ceil) * PH
-      if (i > 0) printf " "
-      printf "%.1f,%.1f", x, y
+      if (ms > 0) {
+        nix[np] = ML + (nv > 1 ? (i / (nv - 1)) * PW : PW / 2)
+        niy[np] = MT1 + PH - (ms / ceil1) * PH
+        np++
+      }
     }
-    printf "\"/>\n"
 
-    # Dots
-    for (i = 0; i < nv; i++) {
-      ms = data[fix, versions[i]] + 0
-      if (ms == 0) continue
-      x = ML + (nv > 1 ? (i / (nv - 1)) * PW : PW / 2)
-      y = MT + PH - (ms / ceil) * PH
-      printf "<circle cx=\"%.1f\" cy=\"%.1f\" r=\"3.5\" ", x, y
-      printf "fill=\"%s\" stroke=\"#fff\" stroke-width=\"1.5\"/>\n", c
+    if (np > 0) {
+      printf "<polyline fill=\"none\" stroke=\"%s\" stroke-width=\"2\" ", c
+      printf "stroke-linejoin=\"round\" points=\""
+      for (j = 0; j < np; j++) {
+        if (j > 0) printf " "
+        printf "%.1f,%.1f", nix[j], niy[j]
+      }
+      printf "\"/>\n"
+
+      for (j = 0; j < np; j++) {
+        printf "<circle cx=\"%.1f\" cy=\"%.1f\" r=\"3.5\" ", nix[j], niy[j]
+        printf "fill=\"%s\" stroke=\"#fff\" stroke-width=\"1.5\"/>\n", c
+      }
     }
   }
 
-  # ── Legend ───────────────────────────────────────────────────────────────
+  # Legend
   lx = ML + PW + 16
   for (f = 1; f <= 4; f++) {
     fix = fix_order[f]
-    ly = MT + 4 + (f - 1) * 22
+    ly = MT1 + 4 + (f - 1) * 22
     printf "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"%s\"/>\n", lx, ly, color[fix]
     printf "<text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"#334155\">%s</text>\n", lx + 12, ly + 4, fix
+  }
+
+  # ── Chart 2: picker (only if data exists) ──────────────────────────────
+
+  if (has_picker) {
+    # Title
+    printf "<text x=\"%d\" y=\"%d\" font-size=\"15\" font-weight=\"600\" ", ML, MT2 - 16
+    printf "fill=\"#1e293b\">hdi benchmark - picker time to first frame</text>\n"
+
+    # Y scale
+    ceil2 = max_picker * 1.1
+    step2 = 50
+    ceil2 = int((ceil2 + step2 - 1) / step2) * step2
+    if (ceil2 == 0) ceil2 = 50
+    nsteps2 = int(ceil2 / step2)
+
+    # Y axis grid + labels
+    for (i = 0; i <= nsteps2; i++) {
+      val = step2 * i
+      y = MT2 + PH - (val / ceil2) * PH
+      printf "<line x1=\"%d\" y1=\"%.1f\" x2=\"%d\" y2=\"%.1f\" ", ML, y, ML + PW, y
+      printf "stroke=\"#e2e8f0\" stroke-width=\"1\"/>\n"
+      printf "<text x=\"%d\" y=\"%.1f\" text-anchor=\"end\" ", ML - 8, y + 4
+      printf "font-size=\"11\" fill=\"#64748b\">%d</text>\n", val
+    }
+
+    # Y axis title
+    printf "<text x=\"14\" y=\"%d\" font-size=\"11\" fill=\"#64748b\" ", MT2 + PH/2
+    printf "transform=\"rotate(-90,14,%d)\">ms</text>\n", MT2 + PH/2
+
+    # X axis labels
+    for (i = 0; i < nv; i++) {
+      x = ML + (nv > 1 ? (i / (nv - 1)) * PW : PW / 2)
+      y = MT2 + PH + 20
+      printf "<text x=\"%.1f\" y=\"%d\" text-anchor=\"middle\" ", x, y
+      printf "font-size=\"11\" fill=\"#64748b\">%s</text>\n", versions[i]
+    }
+    printf "<text x=\"%d\" y=\"%d\" text-anchor=\"middle\" ", ML + PW/2, MT2 + PH + 40
+    printf "font-size=\"11\" fill=\"#64748b\">release</text>\n"
+
+    # Data lines (only versions with picker data get plotted)
+    for (f = 1; f <= 4; f++) {
+      fix = fix_order[f]
+      c = color[fix]
+
+      # Collect valid points (skip versions without picker data)
+      np = 0
+      for (i = 0; i < nv; i++) {
+        ms = pdata[fix, versions[i]] + 0
+        if (ms > 0) {
+          ppx[np] = ML + (nv > 1 ? (i / (nv - 1)) * PW : PW / 2)
+          ppy[np] = MT2 + PH - (ms / ceil2) * PH
+          np++
+        }
+      }
+
+      if (np > 0) {
+        printf "<polyline fill=\"none\" stroke=\"%s\" stroke-width=\"2\" ", c
+        printf "stroke-linejoin=\"round\" points=\""
+        for (j = 0; j < np; j++) {
+          if (j > 0) printf " "
+          printf "%.1f,%.1f", ppx[j], ppy[j]
+        }
+        printf "\"/>\n"
+
+        for (j = 0; j < np; j++) {
+          printf "<circle cx=\"%.1f\" cy=\"%.1f\" r=\"3.5\" ", ppx[j], ppy[j]
+          printf "fill=\"%s\" stroke=\"#fff\" stroke-width=\"1.5\"/>\n", c
+        }
+      }
+    }
+
+    # Legend
+    for (f = 1; f <= 4; f++) {
+      fix = fix_order[f]
+      ly = MT2 + 4 + (f - 1) * 22
+      printf "<circle cx=\"%d\" cy=\"%d\" r=\"5\" fill=\"%s\"/>\n", lx, ly, color[fix]
+      printf "<text x=\"%d\" y=\"%d\" font-size=\"12\" fill=\"#334155\">%s</text>\n", lx + 12, ly + 4, fix
+    }
   }
 
   print "</svg>"
